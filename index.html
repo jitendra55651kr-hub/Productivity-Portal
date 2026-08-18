@@ -257,7 +257,45 @@ function processAndRender() {
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
+// Aapki Google Sheet ID (Upar Step 1 se mili ID yahan paste karein)
+const SHEET_ID = "YOUR_GOOGLE_SHEET_ID_HERE"; 
+
+function fetchGoogleSheetData(17mZJcOCzSVJ_w7m_RGI5lJflkOHPRMD-x99fOJ0KkfQ/edit?gid=531272320#gid=531272320) {
+    const btn = document.getElementById('syncBtn');
+    btn.innerText = "⏳ Fetching Data...";
+    
+    // Google Sheet CSV URL
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+
+    fetch(csvUrl)
+        .then(response => response.text())
+        .then(csvText => {
+            // Parse CSV Data
+            const rows = csvText.split('\n').map(row => row.split(',').map(cell => cell.replace(/^"|"$/g, '').trim()));
+            let days = getCalculatedDays();
+            
+            agentData = [];
+            // Assuming Row 0 is Header: Name, Video, Audio, FDB
+            for (let i = 1; i < rows.length; i++) {
+                if (rows[i][0] && rows[i][0] !== "") {
+                    agentData.push({
+                        name: rows[i][0],
+                        video: parseInt(rows[i][1]) || 0,
+                        audio: parseInt(rows[i][2]) || 0,
+                        fdb: parseInt(rows[i][3]) || 0,
+                        days: days
+                    });
+                }
+            }
+            
+            processAndRender();
+            btn.innerText = "✅ Data Synced Successfully!";
+            setTimeout(() => { btn.innerText = "📊 Fetch Data from Google Sheet"; }, 2000);
+        })
+        .catch(err => {
+            alert("Error loading Google Sheet data: " + err);
+            btn.innerText = "📊 Fetch Data from Google Sheet";
+        });
 }
-</script>
 </body>
 </html>
