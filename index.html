@@ -17,9 +17,9 @@
         .card h2 { font-size: 16px; color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid #eff6ff; padding-bottom: 8px; }
         .agent-block { background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 12px; position: relative; }
         .remove-block-btn { position: absolute; top: 5px; right: 8px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; line-height: 20px; text-align: center; }
-        .form-group { margin-bottom: 8px; }
+        .form-group { margin-bottom: 12px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 3px; color: #475569; }
+        label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 4px; color: #475569; }
         input[type="text"], input[type="number"], input[type="date"], select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
         .btn { width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
         .btn-add { background: #059669; }
@@ -43,7 +43,7 @@
 <body>
 <div class="header">
     <h1>🚀 Agent Productivity Dashboard</h1>
-    <p>Live Connected with Google Sheets</p>
+    <p>Live Connected with Multi-Tab Google Sheets</p>
 </div>
 <div class="container">
     <div>
@@ -69,10 +69,18 @@
         </div>
 
         <div class="card">
-            <h2>🔄 Live Data Sync</h2>
-            <button class="btn btn-sync" id="syncBtn" onclick="fetchGoogleSheetData()">📊 Fetch Data from Google Sheet</button>
-            
-            <h2 style="margin-top:15px;">👥 Add Manual Agents</h2>
+            <h2>🔗 Connect Google Sheet</h2>
+            <div class="form-group">
+                <label>Google Sheet ID</label>
+                <input type="text" id="sheetIdInput" value="17mZJcOCzSVJ_w7m_RGI51Jf1kOHPRMD-x99fOJ0KkfQ" placeholder="Paste Sheet ID here...">
+            </div>
+            <div class="form-group">
+                <label>Sheet Page/Tab Name (e.g., Sheet1)</label>
+                <input type="text" id="sheetNameInput" placeholder="Sheet1 ya Page Ka Naam">
+            </div>
+            <button class="btn btn-sync" id="syncBtn" onclick="fetchGoogleSheetData()">📊 Fetch Selected Tab Data</button>
+
+            <h2 style="margin-top:20px;">👥 Add Manual Agents</h2>
             <div id="agentInputsContainer"></div>
             <button class="btn btn-add" onclick="createAgentInputRow()">➕ Add Another Agent Form</button>
             <button class="btn" onclick="calculateAllBatch()">⚡ Process & Submit All Agents</button>
@@ -111,9 +119,6 @@
 </div>
 
 <script>
-// ⚠️ APNI GOOGLE APPS SCRIPT WEB APP URL YAHAN PASTE KAREIN
-const GOOGLE_SHEET_WEB_APP_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
-
 let agentData = [];
 let chartInstance = null;
 let agentInputCount = 0;
@@ -124,25 +129,45 @@ window.onload = function() {
 };
 
 function fetchGoogleSheetData() {
-    if(!GOOGLE_SHEET_WEB_APP_URL || GOOGLE_SHEET_WEB_APP_URL.includes("PASTE_YOUR")) {
-        alert("Kripya code me apni Google Apps Script Web App URL daalein!");
+    const sheetId = document.getElementById('sheetIdInput').value.trim();
+    const sheetName = document.getElementById('sheetNameInput').value.trim();
+    const btn = document.getElementById('syncBtn');
+
+    if (!sheetId || !sheetName) {
+        alert("Kripya Google Sheet ID aur Sheet Page Name dono dalein!");
         return;
     }
-    const btn = document.getElementById('syncBtn');
-    btn.innerText = "⏳ Loading Data...";
-    
-    fetch(GOOGLE_SHEET_WEB_APP_URL)
-        .then(response => response.json())
-        .then(data => {
+
+    btn.innerText = "⏳ Fetching Data...";
+
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+
+    fetch(csvUrl)
+        .then(response => response.text())
+        .then(csvText => {
+            const rows = csvText.split('\n').map(row => row.split(',').map(cell => cell.replace(/^"|"$/g, '').trim()));
             let days = getCalculatedDays();
-            agentData = data.map(item => ({ ...item, days: days }));
+            
+            agentData = [];
+            for (let i = 1; i < rows.length; i++) {
+                if (rows[i][0] && rows[i][0] !== "") {
+                    agentData.push({
+                        name: rows[i][0],
+                        video: parseInt(rows[i][1]) || 0,
+                        audio: parseInt(rows[i][2]) || 0,
+                        fdb: parseInt(rows[i][3]) || 0,
+                        days: days
+                    });
+                }
+            }
+            
             processAndRender();
-            btn.innerText = "✅ Data Synced Successfully!";
-            setTimeout(() => { btn.innerText = "📊 Fetch Data from Google Sheet"; }, 2000);
+            btn.innerText = "✅ Data Synced!";
+            setTimeout(() => { btn.innerText = "📊 Fetch Selected Tab Data"; }, 2000);
         })
         .catch(err => {
-            alert("Error fetching data from Google Sheet: " + err);
-            btn.innerText = "📊 Fetch Data from Google Sheet";
+            alert("Error loading Google Sheet tab. Check ID or Tab Name!");
+            btn.innerText = "📊 Fetch Selected Tab Data";
         });
 }
 
