@@ -3,78 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise Operations & Performance Portal</title>
+    <title>Enterprise Operations & Analytics Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #070c1e;
-            --card-bg: #111a33;
-            --sidebar-bg: #040814;
-            --accent-blue: #38bdf8;
-            --accent-green: #4ade80;
-            --accent-yellow: #facc15;
+            --bg-dark: #060913;
+            --card-bg: rgba(18, 26, 47, 0.75);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --sidebar-bg: #030611;
+            --accent-cyan: #38bdf8;
+            --accent-blue: #6366f1;
+            --accent-green: #34d399;
+            --accent-yellow: #fbbf24;
             --accent-red: #f87171;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --border: #1e293b;
-            --input-bg: #0b1329;
+            --glass-glow: rgba(56, 189, 248, 0.12);
         }
 
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
-        body { background-color: var(--bg-dark); color: var(--text-main); display: flex; min-height: 100vh; }
+        * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; margin: 0; padding: 0; }
+        body { background-color: var(--bg-dark); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; }
 
-        /* Sidebar Navigation */
-        .sidebar { width: 260px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 20px 15px; display: flex; flex-direction: column; gap: 8px; position: fixed; height: 100vh; z-index: 100; }
-        .brand { font-size: 15px; font-weight: bold; color: var(--accent-blue); padding: 10px 12px; margin-bottom: 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
-        .nav-btn { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 8px; color: var(--text-muted); cursor: pointer; font-size: 12.5px; font-weight: 500; transition: all 0.2s; border: none; background: transparent; text-align: left; width: 100%; }
-        .nav-btn:hover, .nav-btn.active { background-color: #1a2a50; color: var(--accent-blue); font-weight: 600; border-left: 3px solid var(--accent-blue); }
+        /* Modern Sidebar */
+        .sidebar { width: 270px; background-color: var(--sidebar-bg); border-right: 1px solid var(--card-border); padding: 24px 18px; display: flex; flex-direction: column; gap: 10px; position: fixed; height: 100vh; z-index: 100; }
+        .brand { font-size: 16px; font-weight: 800; color: #fff; padding: 10px 12px; margin-bottom: 20px; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px; }
+        .brand-icon { width: 28px; height: 28px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .nav-btn { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; color: var(--text-muted); cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid transparent; background: transparent; text-align: left; width: 100%; }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.03); color: var(--text-main); }
+        .nav-btn.active { background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(99, 102, 241, 0.15)); border-color: rgba(56, 189, 248, 0.3); color: var(--accent-cyan); box-shadow: 0 4px 20px var(--glass-glow); }
 
-        /* Main Content Area */
-        .main-content { margin-left: 260px; flex: 1; padding: 20px; max-width: calc(100% - 260px); }
-        .page-header { background: linear-gradient(135deg, #101c3d 0%, #1e2e5c 100%); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .page-title { font-size: 18px; font-weight: 700; color: #ffffff; letter-spacing: 0.5px; }
+        /* Main Area */
+        .main-content { margin-left: 270px; flex: 1; padding: 28px; max-width: calc(100% - 270px); }
+        .page-header { background: linear-gradient(135deg, rgba(18, 26, 47, 0.8) 0%, rgba(30, 41, 71, 0.6) 100%); backdrop-filter: blur(12px); padding: 20px 24px; border-radius: 16px; border: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-title { font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; display: flex; align-items: center; gap: 10px; }
 
-        /* Global Control Bar */
-        .filter-bar { display: flex; flex-wrap: wrap; gap: 15px; background: var(--card-bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px; align-items: center; }
-        select, input { background: var(--input-bg); border: 1px solid var(--border); color: var(--text-main); padding: 8px 12px; border-radius: 6px; font-size: 12px; outline: none; }
-        .btn-sync { background: var(--accent-blue); color: #0b1329; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        /* Action Control Bar */
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 16px; background: var(--card-bg); backdrop-filter: blur(12px); padding: 18px; border-radius: 16px; border: 1px solid var(--card-border); margin-bottom: 24px; align-items: center; }
+        .filter-group { display: flex; flex-direction: column; gap: 6px; }
+        .filter-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        select, input[type="date"] { background: rgba(6, 9, 19, 0.8); border: 1px solid var(--card-border); color: var(--text-main); padding: 10px 14px; border-radius: 10px; font-size: 12px; font-weight: 500; outline: none; transition: all 0.2s; }
+        select:focus, input[type="date"]:focus { border-color: var(--accent-cyan); box-shadow: 0 0 0 3px var(--glass-glow); }
 
-        /* Tab Displays */
+        .btn-connect { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 12px; transition: all 0.3s; box-shadow: 0 4px 15px var(--glass-glow); }
+        .btn-connect:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(56, 189, 248, 0.3); }
+
+        /* Scorecards */
+        .scorecard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .scorecard { background: var(--card-bg); backdrop-filter: blur(12px); padding: 20px; border-radius: 16px; border: 1px solid var(--card-border); transition: all 0.3s; position: relative; overflow: hidden; }
+        .scorecard::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent); opacity: 0; transition: 0.3s; }
+        .scorecard:hover::before { opacity: 1; }
+        .scorecard:hover { transform: translateY(-3px); border-color: rgba(56, 189, 248, 0.25); }
+        .scorecard-title { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .scorecard-value { font-size: 26px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+
+        /* Layout Grids & Charts */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+        .chart-card { background: var(--card-bg); backdrop-filter: blur(12px); padding: 22px; border-radius: 16px; border: 1px solid var(--card-border); height: 340px; position: relative; }
+        .chart-title { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Tables */
+        .table-card { background: var(--card-bg); backdrop-filter: blur(12px); border-radius: 16px; border: 1px solid var(--card-border); overflow: hidden; margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left; }
+        th { background: rgba(3, 6, 17, 0.8); color: var(--text-muted); padding: 14px 18px; border-bottom: 1px solid var(--card-border); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+        td { padding: 14px 18px; border-bottom: 1px solid var(--card-border); color: var(--text-main); font-weight: 500; }
+        tr:hover { background-color: rgba(255, 255, 255, 0.02); }
+
+        /* Modal Overlay for Sheet Link */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(3, 6, 17, 0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-card { background: #0f172a; border: 1px solid var(--card-border); border-radius: 20px; width: 90%; max-width: 520px; padding: 28px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .modal-title { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+        .modal-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
+        .modal-input { width: 100%; padding: 12px 16px; background: rgba(6, 9, 19, 0.9); border: 1px solid var(--card-border); border-radius: 10px; color: #fff; font-size: 13px; margin-bottom: 20px; outline: none; }
+        .modal-input:focus { border-color: var(--accent-cyan); }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
+
         .tab-view { display: none; }
         .tab-view.active { display: block; }
-
-        /* Cards & Metric Display */
-        .scorecard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
-        .scorecard { background: linear-gradient(180deg, #18284e 0%, #111d3a 100%); padding: 16px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
-        .scorecard-title { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
-        .scorecard-value { font-size: 22px; font-weight: 800; color: var(--accent-blue); }
-
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        .chart-card { background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid var(--border); height: 320px; position: relative; }
-        .chart-title { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; }
-
-        /* Modern Tables */
-        .table-card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); overflow-x: auto; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
-        th { background: #081126; color: var(--text-muted); padding: 12px 14px; border-bottom: 1px solid var(--border); font-weight: 600; }
-        td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-main); }
-        tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.02); }
-
-        .status-badge { padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; }
-        .badge-present { background: rgba(74, 222, 128, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
-        .badge-leave { background: rgba(248, 113, 113, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); }
-        
-        .sync-status { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; }
-        .status-ok { color: var(--accent-green); background: rgba(74, 222, 128, 0.1); }
-        .status-loading { color: var(--accent-yellow); background: rgba(250, 204, 21, 0.1); }
     </style>
 </head>
 <body>
 
-    <!-- Sidebar Menu -->
+    <!-- Sidebar Navigation -->
     <div class="sidebar">
-        <div class="brand">🚀 Executive Operations</div>
-        <button class="nav-btn active" onclick="switchTab('attendance', this)">📅 Attendance Portal</button>
+        <div class="brand">
+            <div class="brand-icon">⚡</div>
+            <span>OPS DASHBOARD</span>
+        </div>
+        <button class="nav-btn active" onclick="switchTab('attendance', this)">📅 Attendance Log</button>
         <button class="nav-btn" onclick="switchTab('performance', this)">📊 Agent Performance</button>
         <button class="nav-btn" onclick="switchTab('region', this)">🗺️ Regionwise Data</button>
         <button class="nav-btn" onclick="switchTab('tat', this)">⏱️ Turnaround Time (TAT)</button>
@@ -84,45 +100,50 @@
     <div class="main-content">
         <div class="page-header">
             <div class="page-title" id="pageTitle">ATTENDANCE & LEAVE ANALYTICS</div>
-            <div id="syncStatus" class="sync-status status-ok">Connected Live</div>
+            <button class="btn-connect" onclick="openConnectModal()">🔗 Connect Google Sheet</button>
         </div>
 
-        <!-- Global Filters -->
+        <!-- Filter Control Bar -->
         <div class="filter-bar">
-            <div>
-                <label style="font-size: 11px; color: var(--text-muted); display: block;">Date Range:</label>
-                <input type="date" id="startDate" value="2026-08-01" onchange="processAllCalculations()"> to 
-                <input type="date" id="endDate" value="2026-08-18" onchange="processAllCalculations()">
+            <div class="filter-group">
+                <span class="filter-label">Date Range</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="date" id="startDate" value="2026-08-01" onchange="processCalculations()">
+                    <span style="color: var(--text-muted); font-size: 12px;">to</span>
+                    <input type="date" id="endDate" value="2026-08-18" onchange="processCalculations()">
+                </div>
             </div>
-            <div>
-                <label style="font-size: 11px; color: var(--text-muted); display: block;">Agent Filter:</label>
-                <select id="agentFilter" onchange="processAllCalculations()">
+
+            <div class="filter-group">
+                <span class="filter-label">Agent Filter</span>
+                <select id="agentFilter" onchange="processCalculations()">
                     <option value="ALL">All Agents</option>
                 </select>
             </div>
-            <div style="margin-left: auto;">
-                <button class="btn-sync" onclick="fetchAllSheetsData()">🔄 Sync Live Sheet</button>
+
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+                <span id="syncBadge" style="font-size: 11px; padding: 6px 12px; border-radius: 20px; background: rgba(52, 211, 153, 0.1); color: var(--accent-green); font-weight: 700;">
+                    ● Sheet Connected
+                </span>
             </div>
         </div>
 
         <!-- 1. ATTENDANCE TAB -->
         <div id="attendance" class="tab-view active">
             <div class="scorecard-grid">
-                <div class="scorecard"><div class="scorecard-title">Total Days Selected</div><div class="scorecard-value" id="attTotalDays">0</div></div>
-                <div class="scorecard"><div class="scorecard-title">Working Days (Excl. W/O)</div><div class="scorecard-value" id="attWorkDays">0</div></div>
-                <div class="scorecard"><div class="scorecard-title">Present Days</div><div class="scorecard-value" style="color:var(--accent-green)" id="attPresent">0</div></div>
-                <div class="scorecard"><div class="scorecard-title">Leave Days</div><div class="scorecard-value" style="color:var(--accent-red)" id="attLeaves">0</div></div>
+                <div class="scorecard"><div class="scorecard-title">Total Selected Days</div><div class="scorecard-value" id="attTotalDays">0</div></div>
+                <div class="scorecard"><div class="scorecard-title">Working Days (Excl Sat/Sun)</div><div class="scorecard-value" style="color:var(--accent-cyan)" id="attWorkDays">0</div></div>
+                <div class="scorecard"><div class="scorecard-title">Present Count</div><div class="scorecard-value" style="color:var(--accent-green)" id="attPresent">0</div></div>
+                <div class="scorecard"><div class="scorecard-title">Leave Count</div><div class="scorecard-value" style="color:var(--accent-red)" id="attLeaves">0</div></div>
             </div>
 
             <div class="table-card">
-                <div style="padding: 12px 16px; font-weight: bold; font-size: 13px; border-bottom: 1px solid var(--border);">Agent Attendance Log</div>
+                <div style="padding: 16px 20px; font-weight: 700; font-size: 13px; border-bottom: 1px solid var(--card-border);">Agent Attendance Log</div>
                 <table>
                     <thead>
                         <tr><th>Date</th><th>Agent Name</th><th>Status</th><th>Work Shift</th><th>Remark</th></tr>
                     </thead>
-                    <tbody id="attendanceTableBody">
-                        <!-- Dynamic Rows -->
-                    </tbody>
+                    <tbody id="attendanceTableBody"></tbody>
                 </table>
             </div>
         </div>
@@ -133,7 +154,7 @@
                 <div class="scorecard"><div class="scorecard-title">Clinic Video</div><div class="scorecard-value" id="perfVideo">0</div></div>
                 <div class="scorecard"><div class="scorecard-title">Camp Cases</div><div class="scorecard-value" id="perfCamp">0</div></div>
                 <div class="scorecard"><div class="scorecard-title">Connected FDB</div><div class="scorecard-value" style="color:var(--accent-green)" id="perfFdb">0</div></div>
-                <div class="scorecard"><div class="scorecard-title">Total Consultations</div><div class="scorecard-value" id="perfTotal">0</div></div>
+                <div class="scorecard"><div class="scorecard-title">Total Consultations</div><div class="scorecard-value" style="color:var(--accent-cyan)" id="perfTotal">0</div></div>
                 <div class="scorecard"><div class="scorecard-title">Avg Productivity/Day</div><div class="scorecard-value" style="color:var(--accent-yellow)" id="perfAvgProd">0%</div></div>
             </div>
 
@@ -143,7 +164,7 @@
                     <canvas id="prodChart"></canvas>
                 </div>
                 <div class="chart-card">
-                    <div class="chart-title">Agentwise Case Breakdown</div>
+                    <div class="chart-title">Agentwise Breakdown</div>
                     <canvas id="breakdownChart"></canvas>
                 </div>
             </div>
@@ -152,50 +173,57 @@
         <!-- 3. REGIONWISE DATA TAB -->
         <div id="region" class="tab-view">
             <div class="scorecard-grid">
-                <div class="scorecard"><div class="scorecard-title">Siwan Cases</div><div class="scorecard-value" id="regSiwan">0</div></div>
-                <div class="scorecard"><div class="scorecard-title">Jashpur Cases</div><div class="scorecard-value" id="regJashpur">0</div></div>
-                <div class="scorecard"><div class="scorecard-title">Bilaspur Cases</div><div class="scorecard-value" id="regBilaspur">0</div></div>
+                <div class="scorecard"><div class="scorecard-title">Siwan Total</div><div class="scorecard-value" id="regSiwan">0</div></div>
+                <div class="scorecard"><div class="scorecard-title">Jashpur Total</div><div class="scorecard-value" id="regJashpur">0</div></div>
+                <div class="scorecard"><div class="scorecard-title">Bilaspur Total</div><div class="scorecard-value" id="regBilaspur">0</div></div>
                 <div class="scorecard"><div class="scorecard-title">Grand Total</div><div class="scorecard-value" style="color:var(--accent-green)" id="regTotal">0</div></div>
             </div>
 
             <div class="table-card">
-                <div style="padding: 12px 16px; font-weight: bold; font-size: 13px; border-bottom: 1px solid var(--border);">HESMWISE REGION BREAKDOWN</div>
+                <div style="padding: 16px 20px; font-weight: 700; font-size: 13px; border-bottom: 1px solid var(--card-border);">HESMWISE REGION DATA</div>
                 <table>
                     <thead>
-                        <tr><th>Region Name</th><th>Hesm Name</th><th>Done Cons.</th><th>Clinic Video</th><th>Camp Cons.</th></tr>
+                        <tr><th>Region</th><th>HESM Name</th><th>Done Cons.</th><th>Clinic Video</th><th>Camp Cons.</th></tr>
                     </thead>
-                    <tbody id="hesmTableBody">
-                        <!-- Dynamic HESM Data -->
-                    </tbody>
+                    <tbody id="hesmTableBody"></tbody>
                 </table>
             </div>
         </div>
 
         <!-- 4. TURNAROUND TIME (TAT) TAB -->
         <div id="tat" class="tab-view">
-            <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-                <div class="scorecard" style="width: 280px; padding: 20px;">
+            <div style="display: flex; justify-content: center; margin-bottom: 24px;">
+                <div class="scorecard" style="width: 300px; text-align: center;">
                     <div class="scorecard-title">Team Average TAT</div>
-                    <div class="scorecard-value" style="font-size: 32px; color: var(--accent-green);" id="teamAvgTat">00:00:00</div>
+                    <div class="scorecard-value" style="font-size: 36px; color: var(--accent-green);" id="teamAvgTat">00:00:00</div>
                 </div>
             </div>
 
-            <div class="chart-card" style="margin-bottom: 20px;">
-                <div class="chart-title">Agentwise Turnaround Time (TAT in Mins)</div>
+            <div class="chart-card">
+                <div class="chart-title">Agent Turnaround Time (Minutes)</div>
                 <canvas id="tatChart"></canvas>
             </div>
         </div>
 
     </div>
 
-    <script>
-        const SHEET_ID = '17mZJcOCzSVJ_w7m_RGI51Jf1kOHPRMD-x99fOJ0KkfQ';
-        
-        let prodChartInst = null;
-        let breakdownChartInst = null;
-        let tatChartInst = null;
+    <!-- Connect Modal -->
+    <div class="modal-overlay" id="connectModal">
+        <div class="modal-card">
+            <div class="modal-title">Connect Google Sheet</div>
+            <div class="modal-sub">Apni Google Sheet ka URL ya ID paste karein. Sheet <b>"Anyone with the link"</b> par public hone chahiye.</div>
+            <input type="text" class="modal-input" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/17mZJcOCzSVJ_w7m.../edit">
+            <div class="modal-actions">
+                <button class="nav-btn" style="width: auto;" onclick="closeConnectModal()">Cancel</button>
+                <button class="btn-connect" onclick="connectSheetFromInput()">Connect & Load Data</button>
+            </div>
+        </div>
+    </div>
 
-        // Dynamic Stores
+    <script>
+        let currentSheetId = '17mZJcOCzSVJ_w7m_RGI5lJflkOHPRMD-x99fOJ0KkfQ';
+        let prodChartInst = null, breakdownChartInst = null, tatChartInst = null;
+
         let liveAgentData = [];
         let liveHesmData = [];
 
@@ -214,76 +242,82 @@
             document.getElementById('pageTitle').innerText = titles[tabId];
         }
 
-        // Exclude Saturday and Sunday
+        function openConnectModal() { document.getElementById('connectModal').style.display = 'flex'; }
+        function closeConnectModal() { document.getElementById('connectModal').style.display = 'none'; }
+
+        function extractSheetId(inputStr) {
+            const match = inputStr.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            return match ? match[1] : inputStr.trim();
+        }
+
+        function connectSheetFromInput() {
+            const val = document.getElementById('sheetUrlInput').value;
+            if(!val) return alert('Kripya valid Google Sheet Link enter karein!');
+            currentSheetId = extractSheetId(val);
+            closeConnectModal();
+            fetchSheetData();
+        }
+
         function calculateWorkingDaysExcludingWeekends(start, end) {
             let count = 0;
             let cur = new Date(start);
             let last = new Date(end);
-
             while (cur <= last) {
                 let day = cur.getDay();
-                if (day !== 0 && day !== 6) { count++; }
+                if (day !== 0 && day !== 6) count++;
                 cur.setDate(cur.getDate() + 1);
             }
             return count;
         }
 
-        // Live Google Sheets Fetch Engine
-        async function fetchAllSheetsData() {
-            const statusEl = document.getElementById('syncStatus');
-            statusEl.className = 'sync-status status-loading';
-            statusEl.innerText = 'Syncing Google Sheet...';
+        async function fetchSheetData() {
+            const syncBadge = document.getElementById('syncBadge');
+            syncBadge.style.color = '#fbbf24';
+            syncBadge.innerText = '● Loading Sheet Data...';
 
             try {
-                // Fetch Data using Google Query Endpoint
-                const perfUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
-                const response = await fetch(perfUrl);
-                const text = await response.text();
+                const url = `https://docs.google.com/spreadsheets/d/${currentSheetId}/gviz/tq?tqx=out:json`;
+                const res = await fetch(url);
+                const txt = await res.text();
                 
-                const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w]+)\)/);
+                const jsonMatch = txt.match(/google\.visualization\.Query\.setResponse\(([\s\S\w]+)\)/);
                 if (jsonMatch) {
                     const data = JSON.parse(jsonMatch[1]);
-                    parseSheetRows(data.table.rows);
+                    parseRows(data.table.rows);
                 }
-                
-                statusEl.className = 'sync-status status-ok';
-                statusEl.innerText = 'Live Sheet Synced';
-            } catch (e) {
-                console.error("Sheet Fetch Error:", e);
-                statusEl.className = 'sync-status';
-                statusEl.innerText = 'Using Local Cache';
+
+                syncBadge.style.color = '#34d399';
+                syncBadge.innerText = '● Live Data Connected';
+            } catch (err) {
+                console.error(err);
+                syncBadge.style.color = '#f87171';
+                syncBadge.innerText = '● Sync Failed';
             } finally {
                 populateAgentDropdown();
-                processAllCalculations();
+                processCalculations();
             }
         }
 
-        function parseSheetRows(rows) {
+        function parseRows(rows) {
             let agents = [];
             let hesms = [];
 
             rows.forEach((r, idx) => {
                 if (!r.c) return;
-                
-                // Read Agent Rows
-                let agentName = r.c[0] ? String(r.c[0].v || '').trim() : '';
-                if (agentName && !agentName.toLowerCase().includes('agent') && !agentName.toLowerCase().includes('total') && idx < 10) {
+                let aName = r.c[0] ? String(r.c[0].v || '').trim() : '';
+                if (aName && !aName.toLowerCase().includes('agent') && !aName.toLowerCase().includes('total') && idx < 12) {
                     let video = Number(r.c[1] ? r.c[1].v : 0);
                     let camp = Number(r.c[2] ? r.c[2].v : 0);
                     let fdb = Number(r.c[3] ? r.c[3].v : 0);
-                    let done = video + camp;
-                    let tat = Number(r.c[5] ? r.c[5].v : 20);
-
-                    agents.push({ agent: agentName, video: video, camp: camp, fdb: fdb, done: done, tat: tat });
+                    let tat = Number(r.c[5] ? r.c[5].v : 22);
+                    agents.push({ agent: aName, video, camp, fdb, done: (video + camp), tat });
                 }
 
-                // Read Region/HESM Rows
-                let regName = r.c[8] ? String(r.c[8].v || '').trim() : '';
-                let hesmName = r.c[9] ? String(r.c[9].v || '').trim() : '';
-                if (regName && hesmName) {
+                let reg = r.c[8] ? String(r.c[8].v || '').trim() : '';
+                let hesm = r.c[9] ? String(r.c[9].v || '').trim() : '';
+                if (reg && hesm) {
                     hesms.push({
-                        region: regName,
-                        hesm: hesmName,
+                        region: reg, hesm: hesm,
                         done: Number(r.c[10] ? r.c[10].v : 0),
                         video: Number(r.c[11] ? r.c[11].v : 0),
                         camp: Number(r.c[12] ? r.c[12].v : 0)
@@ -291,8 +325,8 @@
                 }
             });
 
-            if (agents.length > 0) liveAgentData = agents;
-            if (hesms.length > 0) liveHesmData = hesms;
+            if(agents.length) liveAgentData = agents;
+            if(hesms.length) liveHesmData = hesms;
         }
 
         function populateAgentDropdown() {
@@ -303,14 +337,12 @@
             });
         }
 
-        function processAllCalculations() {
+        function processCalculations() {
             const startStr = document.getElementById('startDate').value;
             const endStr = document.getElementById('endDate').value;
             const selectedAgent = document.getElementById('agentFilter').value;
 
-            const startDate = new Date(startStr);
-            const endDate = new Date(endStr);
-            const totalDays = Math.max(1, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1);
+            const totalDays = Math.max(1, Math.ceil((new Date(endStr) - new Date(startStr)) / (1000 * 60 * 60 * 24)) + 1);
             const workingDays = calculateWorkingDaysExcludingWeekends(startStr, endStr);
 
             document.getElementById('attTotalDays').innerText = totalDays;
@@ -318,28 +350,28 @@
 
             let filteredAgents = selectedAgent === 'ALL' ? liveAgentData : liveAgentData.filter(a => a.agent === selectedAgent);
 
-            renderAttendance(filteredAgents, startStr, totalDays, workingDays);
+            renderAttendance(filteredAgents, startStr, workingDays);
             renderPerformance(filteredAgents, workingDays);
             renderRegion();
             renderTat(filteredAgents);
         }
 
-        function renderAttendance(agents, startDate, totalDays, workingDays) {
+        function renderAttendance(agents, startStr, workingDays) {
             document.getElementById('attPresent').innerText = (workingDays * agents.length);
             document.getElementById('attLeaves').innerText = 0;
 
             const tbody = document.getElementById('attendanceTableBody');
             tbody.innerHTML = '';
             agents.forEach(a => {
-                let tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${startDate}</td>
-                    <td><b>${a.agent}</b></td>
-                    <td><span class="status-badge badge-present">PRESENT</span></td>
-                    <td>09:00 AM - 06:00 PM</td>
-                    <td>Working (Sat/Sun Excluded)</td>
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${startStr}</td>
+                        <td><b>${a.agent}</b></td>
+                        <td><span style="color:var(--accent-green); background:rgba(52, 211, 153, 0.1); padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700;">PRESENT</span></td>
+                        <td>09:00 AM - 06:00 PM</td>
+                        <td>On Duty (Excl. Sat/Sun)</td>
+                    </tr>
                 `;
-                tbody.appendChild(tr);
             });
         }
 
@@ -355,8 +387,7 @@
             document.getElementById('perfTotal').innerText = totalDone.toLocaleString();
 
             let targetPerDay = 80;
-            let totalTarget = Math.max(1, workingDays * targetPerDay * (agents.length || 1));
-            let avgProdPercent = Math.round((totalDone / totalTarget) * 100);
+            let avgProdPercent = Math.round((totalDone / Math.max(1, workingDays * targetPerDay * agents.length)) * 100);
             document.getElementById('perfAvgProd').innerText = `${avgProdPercent}%`;
 
             const labels = agents.map(a => a.agent);
@@ -365,36 +396,22 @@
             if(prodChartInst) prodChartInst.destroy();
             prodChartInst = new Chart(document.getElementById('prodChart').getContext('2d'), {
                 type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{ label: 'Productivity %', data: prodData, backgroundColor: '#38bdf8', borderRadius: 6 }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#f8fafc' } } }
-                }
+                data: { labels, datasets: [{ label: 'Productivity %', data: prodData, backgroundColor: '#38bdf8', borderRadius: 6 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#f8fafc' } } } }
             });
 
             if(breakdownChartInst) breakdownChartInst.destroy();
             breakdownChartInst = new Chart(document.getElementById('breakdownChart').getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels,
                     datasets: [
                         { label: 'Clinic Video', data: agents.map(a => a.video), backgroundColor: '#38bdf8' },
-                        { label: 'Camp Cases', data: agents.map(a => a.camp), backgroundColor: '#facc15' },
-                        { label: 'Connected FDB', data: agents.map(a => a.fdb), backgroundColor: '#4ade80' }
+                        { label: 'Camp Cases', data: agents.map(a => a.camp), backgroundColor: '#fbbf24' },
+                        { label: 'Connected FDB', data: agents.map(a => a.fdb), backgroundColor: '#34d399' }
                     ]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#94a3b8' } } },
-                    scales: { x: { ticks: { color: '#f8fafc' } }, y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } } }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } } }, scales: { x: { ticks: { color: '#f8fafc' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } } } }
             });
         }
 
@@ -402,50 +419,42 @@
             let siwan = liveHesmData.filter(h => h.region.toLowerCase().includes('siwan')).reduce((s, h) => s + h.done, 0);
             let jashpur = liveHesmData.filter(h => h.region.toLowerCase().includes('jashpur')).reduce((s, h) => s + h.done, 0);
             let bilaspur = liveHesmData.filter(h => h.region.toLowerCase().includes('bilaspur')).reduce((s, h) => s + h.done, 0);
-            let grandTotal = siwan + jashpur + bilaspur;
 
             document.getElementById('regSiwan').innerText = siwan.toLocaleString();
             document.getElementById('regJashpur').innerText = jashpur.toLocaleString();
             document.getElementById('regBilaspur').innerText = bilaspur.toLocaleString();
-            document.getElementById('regTotal').innerText = grandTotal.toLocaleString();
+            document.getElementById('regTotal').innerText = (siwan + jashpur + bilaspur).toLocaleString();
 
             const tbody = document.getElementById('hesmTableBody');
             tbody.innerHTML = '';
             liveHesmData.forEach(h => {
-                let tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><b>${h.region}</b></td>
-                    <td>${h.hesm}</td>
-                    <td>${h.done.toLocaleString()}</td>
-                    <td>${h.video.toLocaleString()}</td>
-                    <td>${h.camp.toLocaleString()}</td>
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>${h.region}</b></td>
+                        <td>${h.hesm}</td>
+                        <td>${h.done.toLocaleString()}</td>
+                        <td>${h.video.toLocaleString()}</td>
+                        <td>${h.camp.toLocaleString()}</td>
+                    </tr>
                 `;
-                tbody.appendChild(tr);
             });
         }
 
         function renderTat(agents) {
-            let avgTat = agents.length > 0 ? (agents.reduce((s, a) => s + a.tat, 0) / agents.length).toFixed(1) : 24.5;
+            let avgTat = agents.length > 0 ? (agents.reduce((s, a) => s + a.tat, 0) / agents.length).toFixed(1) : 24;
             document.getElementById('teamAvgTat').innerText = `00:${Math.round(avgTat)}:00`;
 
             if(tatChartInst) tatChartInst.destroy();
             tatChartInst = new Chart(document.getElementById('tatChart').getContext('2d'), {
                 type: 'bar',
-                data: {
-                    labels: agents.map(a => a.agent),
-                    datasets: [{ label: 'TAT (Minutes)', data: agents.map(a => a.tat), backgroundColor: '#facc15', borderRadius: 6 }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { x: { ticks: { color: '#f8fafc' } }, y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } } }
-                }
+                data: { labels: agents.map(a => a.agent), datasets: [{ label: 'TAT (Mins)', data: agents.map(a => a.tat), backgroundColor: '#fbbf24', borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#f8fafc' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } } } }
             });
         }
 
         window.onload = function() {
-            fetchAllSheetsData();
+            document.getElementById('sheetUrlInput').value = `https://docs.google.com/spreadsheets/d/${currentSheetId}/edit`;
+            fetchSheetData();
         };
     </script>
 </body>
