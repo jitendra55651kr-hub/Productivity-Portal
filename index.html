@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+function doGet() {
+  var html = `<!DOCTYPE html>
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
@@ -11,20 +12,15 @@
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
         body { background-color: var(--bg); color: var(--text); padding: 15px; }
         .header { background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center; }
-        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media (min-width: 900px) { .container { grid-template-columns: 420px 1fr; } }
+        .container { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 900px) { .container { grid-template-columns: 360px 1fr; } }
         .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
         .card h2 { font-size: 16px; color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid #eff6ff; padding-bottom: 8px; }
-        .agent-block { background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 12px; position: relative; }
-        .remove-block-btn { position: absolute; top: 5px; right: 8px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; line-height: 20px; text-align: center; }
-        .form-group { margin-bottom: 8px; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 3px; color: #475569; }
-        input[type="text"], input[type="number"], input[type="date"], select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
-        .btn { width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
-        .btn-add { background: #059669; }
-        .btn-danger { background: #dc2626; }
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #475569; }
+        input[type="text"], input[type="number"], input[type="date"], select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+        .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
         .kpi-card { background: white; padding: 15px; border-radius: 10px; border: 1px solid var(--border); text-align: center; }
         .kpi-val { font-size: 20px; font-weight: bold; color: var(--primary); }
         .kpi-lbl { font-size: 11px; color: #64748b; text-transform: uppercase; }
@@ -36,7 +32,6 @@
         .badge-yellow { background: #fef9c3; color: #a16207; }
         .badge-red { background: #fee2e2; color: #b91c1c; }
         .chart-container { position: relative; height: 260px; }
-        .del-btn { color: #dc2626; cursor: pointer; font-weight: bold; text-align: center; border: none; background: none; font-size: 16px; }
     </style>
 </head>
 <body>
@@ -47,35 +42,27 @@
 <div class="container">
     <div>
         <div class="card">
-            <h2>⚙️ Working Days Configuration</h2>
+            <h2>Data Entry Controls</h2>
+            <div class="form-group"><label>Agent Name</label><input type="text" id="agentName" value="Saurav Pal"></div>
+            <div class="form-group"><label>Clinic Video Calls (x5)</label><input type="number" id="video" value="1523"></div>
+            <div class="form-group"><label>Camp Audio Calls (x4)</label><input type="number" id="audio" value="1104"></div>
+            <div class="form-group"><label>Connected FDB (x3)</label><input type="number" id="fdb" value="7"></div>
             <div class="form-group">
                 <label>Working Days Mode</label>
                 <select id="dayMode" onchange="toggleDayMode()">
-                    <option value="daterange">Date Range (Auto Exclude Sat/Sun)</option>
                     <option value="manual">Manual Working Days Entry</option>
+                    <option value="daterange">Date Range (Auto Exclude Sat/Sun)</option>
                 </select>
             </div>
-            <div id="manualDaysBox" class="form-group" style="display:none;">
+            <div id="manualDaysBox" class="form-group">
                 <label>Working Days Count (Mon-Fri)</label>
                 <input type="number" id="workDays" value="21">
             </div>
-            <div id="dateRangeBox" class="form-group">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                    <div><label>Start Date</label><input type="date" id="startDate" value="2026-07-01"></div>
-                    <div><label>End Date</label><input type="date" id="endDate" value="2026-08-17"></div>
-                </div>
+            <div id="dateRangeBox" class="form-group" style="display:none;">
+                <label>Start Date</label><input type="date" id="startDate" style="margin-bottom:8px;">
+                <label>End Date</label><input type="date" id="endDate">
             </div>
-        </div>
-
-        <div class="card">
-            <h2>👥 Add Multiple Agents Data</h2>
-            <div id="agentInputsContainer">
-                <!-- Dynamic Agent Input Forms will appear here -->
-            </div>
-            <button class="btn btn-add" onclick="createAgentInputRow()">➕ Add Another Agent Form</button>
-            <button class="btn" onclick="calculateAllBatch()">⚡ Process & Submit All Agents</button>
-            <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Current Table Data</button>
-            
+            <button class="btn" onclick="addAgent()">Calculate & Add Agent</button>
             <hr style="margin:15px 0;">
             <div class="form-group">
                 <label>Bulk Excel Upload (.xlsx / .csv)</label>
@@ -83,12 +70,11 @@
             </div>
         </div>
     </div>
-
     <div>
         <div class="kpi-grid">
             <div class="kpi-card"><div class="kpi-lbl">Total Agents</div><div class="kpi-val" id="kpiAgents">0</div></div>
             <div class="kpi-card"><div class="kpi-lbl">Avg Productivity</div><div class="kpi-val" id="kpiAvgProd">0%</div></div>
-            <div class="kpi-card"><div class="kpi-lbl">Top Performer</div><div class="kpi-val" id="kpiTopAgent" style="font-size:13px; color:#15803d;">-</div></div>
+            <div class="kpi-card"><div class="kpi-lbl">Top Performer</div><div class="kpi-val" id="kpiTopAgent" style="font-size:14px; color:#15803d;">-</div></div>
         </div>
         <div class="card">
             <h2>📊 Performance Chart (%)</h2>
@@ -99,7 +85,7 @@
             <div style="overflow-x:auto;">
                 <table>
                     <thead>
-                        <tr><th>Agent</th><th>Video</th><th>Audio</th><th>FDB</th><th>Total Pts</th><th>Target Pts</th><th>Productivity</th><th>Action</th></tr>
+                        <tr><th>Agent</th><th>Video</th><th>Audio</th><th>FDB</th><th>Total Pts</th><th>Target Pts</th><th>Productivity</th></tr>
                     </thead>
                     <tbody id="tableBody"></tbody>
                 </table>
@@ -107,62 +93,31 @@
         </div>
     </div>
 </div>
-
 <script>
 let agentData = [
-    { name: "Saurav Pal", video: 1523, audio: 1104, fdb: 7, days: 34 },
-    { name: "MD Anas", video: 1530, audio: 616, fdb: 32, days: 34 },
-    { name: "Shivam Verma", video: 1607, audio: 467, fdb: 2, days: 34 },
-    { name: "Jogender Singh", video: 1146, audio: 750, fdb: 4, days: 34 },
-    { name: "Renu Gupta", video: 1145, audio: 556, fdb: 0, days: 34 }
+    { name: "Saurav Pal", video: 1523, audio: 1104, fdb: 7, days: 21 },
+    { name: "MD Anas", video: 1530, audio: 616, fdb: 32, days: 21 },
+    { name: "Shivam Verma", video: 1607, audio: 467, fdb: 2, days: 21 },
+    { name: "Jogender Singh", video: 1146, audio: 750, fdb: 4, days: 21 },
+    { name: "Renu Gupta", video: 1145, audio: 556, fdb: 0, days: 21 }
 ];
 let chartInstance = null;
-let agentInputCount = 0;
-
-window.onload = function() {
-    createAgentInputRow(); // Create initial form
-    processAndRender();
-};
-
+window.onload = function() { processAndRender(); };
 function toggleDayMode() {
     const m = document.getElementById('dayMode').value;
     document.getElementById('manualDaysBox').style.display = m === 'manual' ? 'block' : 'none';
     document.getElementById('dateRangeBox').style.display = m === 'daterange' ? 'block' : 'none';
 }
-
 function getBusinessDays(s, e) {
     let count = 0, cur = new Date(s), end = new Date(e);
-    while (cur <= end) { 
-        if (cur.getDay() !== 0 && cur.getDay() !== 6) count++; 
-        cur.setDate(cur.getDate() + 1); 
-    }
+    while (cur <= end) { if (cur.getDay() !== 0 && cur.getDay() !== 6) count++; cur.setDate(cur.getDate() + 1); }
     return count;
 }
-
-function createAgentInputRow() {
-    agentInputCount++;
-    const container = document.getElementById('agentInputsContainer');
-    const block = document.createElement('div');
-    block.className = 'agent-block';
-    block.id = `input-block-${agentInputCount}`;
-    block.innerHTML = `
-        <button class="remove-block-btn" onclick="removeAgentInputRow(${agentInputCount})">✕</button>
-        <div class="form-group"><label>Agent Name</label><input type="text" class="in-name" placeholder="Agent Name"></div>
-        <div class="form-row">
-            <div><label>Video (x5)</label><input type="number" class="in-video" placeholder="0"></div>
-            <div><label>Audio (x4)</label><input type="number" class="in-audio" placeholder="0"></div>
-            <div><label>FDB (x3)</label><input type="number" class="in-fdb" placeholder="0"></div>
-        </div>
-    `;
-    container.appendChild(block);
-}
-
-function removeAgentInputRow(id) {
-    const block = document.getElementById(`input-block-${id}`);
-    if (block) block.remove();
-}
-
-function calculateAllBatch() {
+function addAgent() {
+    const name = document.getElementById('agentName').value || 'Agent';
+    const video = parseInt(document.getElementById('video').value) || 0;
+    const audio = parseInt(document.getElementById('audio').value) || 0;
+    const fdb = parseInt(document.getElementById('fdb').value) || 0;
     let days = 21;
     if(document.getElementById('dayMode').value === 'manual') {
         days = parseInt(document.getElementById('workDays').value) || 21;
@@ -170,38 +125,9 @@ function calculateAllBatch() {
         const s = document.getElementById('startDate').value, e = document.getElementById('endDate').value;
         if(s && e) days = getBusinessDays(s, e);
     }
-
-    const blocks = document.querySelectorAll('.agent-block');
-    blocks.forEach(b => {
-        const name = b.querySelector('.in-name').value.trim();
-        const video = parseInt(b.querySelector('.in-video').value) || 0;
-        const audio = parseInt(b.querySelector('.in-audio').value) || 0;
-        const fdb = parseInt(b.querySelector('.in-fdb').value) || 0;
-        if(name !== "") {
-            agentData.push({ name, video, audio, fdb, days });
-        }
-    });
-
-    // Clear input fields after adding
-    document.getElementById('agentInputsContainer').innerHTML = '';
-    agentInputCount = 0;
-    createAgentInputRow();
-    
+    agentData.push({ name, video, audio, fdb, days });
     processAndRender();
 }
-
-function deleteAgent(index) {
-    agentData.splice(index, 1);
-    processAndRender();
-}
-
-function clearAllData() {
-    if(confirm("Kiya aap poora table data clear karna chahte hain?")) {
-        agentData = [];
-        processAndRender();
-    }
-}
-
 function handleFileUpload(e) {
     const file = e.target.files[0];
     const reader = new FileReader();
@@ -209,23 +135,17 @@ function handleFileUpload(e) {
         const data = new Uint8Array(evt.target.result);
         const wb = XLSX.read(data, {type: 'array'});
         const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-        let days = 21;
-        if(document.getElementById('dayMode').value === 'daterange') {
-            const s = document.getElementById('startDate').value, e = document.getElementById('endDate').value;
-            if(s && e) days = getBusinessDays(s, e);
-        }
         agentData = rows.map(r => ({
             name: r['Agent'] || r['Name'] || 'Agent',
             video: parseInt(r['Clinic Video Ca'] || r['Video'] || 0),
             audio: parseInt(r['camp'] || r['Audio'] || 0),
             fdb: parseInt(r['Connected Fdl'] || r['FDB'] || 0),
-            days: days
+            days: 21
         }));
         processAndRender();
     };
     reader.readAsArrayBuffer(file);
 }
-
 function processAndRender() {
     const computed = agentData.map(a => {
         const earned = (a.video * 5) + (a.audio * 4) + (a.fdb * 3);
@@ -233,18 +153,17 @@ function processAndRender() {
         const prod = target > 0 ? ((earned / target) * 100).toFixed(2) : 0;
         return { ...a, earned, target, prod: parseFloat(prod) };
     });
-    
     document.getElementById('kpiAgents').innerText = computed.length;
-    const avg = computed.length > 0 ? (computed.reduce((acc, c) => acc + c.prod, 0) / computed.length).toFixed(2) : 0;
+    const avg = (computed.reduce((acc, c) => acc + c.prod, 0) / computed.length).toFixed(2);
     document.getElementById('kpiAvgProd').innerText = avg + '%';
     const top = [...computed].sort((a,b) => b.prod - a.prod)[0];
     document.getElementById('kpiTopAgent').innerText = top ? top.name + ' (' + top.prod + '%)' : '-';
     
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
-    computed.forEach((c, idx) => {
+    computed.forEach(c => {
         let bClass = c.prod >= 100 ? 'badge-green' : (c.prod >= 80 ? 'badge-yellow' : 'badge-red');
-        tbody.innerHTML += `<tr><td><strong>${c.name}</strong></td><td>${c.video}</td><td>${c.audio}</td><td>${c.fdb}</td><td>${c.earned}</td><td>${c.target}</td><td><span class="badge ${bClass}">${c.prod}%</span></td><td><button class="del-btn" onclick="deleteAgent(${idx})">✕</button></td></tr>`;
+        tbody.innerHTML += '<tr><td><strong>'+c.name+'</strong></td><td>'+c.video+'</td><td>'+c.audio+'</td><td>'+c.fdb+'</td><td>'+c.earned+'</td><td>'+c.target+'</td><td><span class="badge '+bClass+'">'+c.prod+'%</span></td></tr>';
     });
     
     const ctx = document.getElementById('prodChart').getContext('2d');
@@ -260,4 +179,6 @@ function processAndRender() {
 }
 </script>
 </body>
-</html>
+</html>`;
+  return HtmlService.createHtmlOutput(html).setTitle("Agent Productivity Portal");
+}
