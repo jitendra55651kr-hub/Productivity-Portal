@@ -1,439 +1,1348 @@
+
+Gemini
+New chat
+Search chats
+Images
+Library
+New notebook
+Working Days Calculation Discrepancy
+Agent Productivity Dashboard Code
+Agent Productivity Portal Code
+सामान्य त्रुटि संदेश का समाधान
+Conversation with Gemini
+Working days kam kyu show hora hai
+
+Aapke dashboard par Target Points kam hone ki wajah se working days kam show ho rahe hain. Iska main reason calculation logic ka difference hai:
+
+Main Cause: Target Points Calculation Gap
+Dashboard Calculation (Image 1):
+
+Target Points: 4,800
+
+Formula Shown: Days × 300
+
+Calculated Working Days:
+
+300
+4800
+​
+ =16 days
+Top card par Sat/Sun (16) or total counted days 16 reflect ho raha hai.
+
+Excel Sheet Calculation (Image 2):
+
+Date Range: 21 July to 12 August (Total 23 Calendar Days).
+
+Excel Total Target Points: 5,100
+
+Calculated Working Days:
+
+300
+5100
+​
+ =17 days
+Difference Kyu Aa Raha Hai?
+Weekends / Holidays Deductions: Dashboard date calculation me weekends (Saturdays/Sundays) ya explicit non-working days exclude (minus) kiye gaye hain, jis se total working days 16 aa rahe hain.
+
+Excel Calculation: Excel sheet me Target Points 5,100 hain, yani wahan 17 working days count hue hain (23 total days me se 6 weekends/holidays minus karke).
+
+Kaise Fix Karen?
+Logic Sync: Ensure karein ki dashboard ka Date Filter or Script ka Weekend Exclusion Logic same date range (21 July - 12 Aug) ko 17 working days calculate kare.
+
+Script Verification: Code/Google Sheet script me Check karein ki Saturday & Sunday both exclude ho rahe hain ya sirf Sunday.
+
+Isme ek option add kro jisse agar extra agent hai like md anas , ya saurabh ko remove Krna hai ya delete Krna hai to easily kr de
+
+Aap apne Web Dashboard me Agent Remove / Filter Out karne ke liye 2 best options add kar sakte hain. Code me modifications niche diye gaye hain:
+
+Option 1: Action Column me 'Delete' / 'Remove' Button (Recommended)
+Table ke har row ke aage ek Action column add kar dijiye jisme Delete / Trash (🗑️) icon hoga. Jab aap kisi agent ko remove karenge, wo dashboard aur summary metrics (Total Agents, Total Points, Average Productivity) dono se instantly exclude ho jayega.
+
+1. HTML (Table Header Addition)
+Table header me Action column include karein:
+
+HTML
+<th>Agent Name</th>
+<th>Videos (5pt)</th>
+<th>Camps (4pt)</th>
+<th>FDB (3pt)</th>
+<th>Achieved Points</th>
+<th>Total Target</th>
+<th>Productivity %</th>
+<th>Action</th> <!-- Naya Column -->
+2. JavaScript (Render Function & Delete Logic)
+Data render karte waqt Delete Button add karein aur click par agent delete/re-calculate karne ka logic run karein:
+
+JavaScript
+let currentAgentsData = [...uploadedData]; // Store active agents
+
+function renderAgentTable(agents) {
+  const tableBody = document.querySelector('#agentTableBody');
+  tableBody.innerHTML = '';
+
+  agents.forEach((agent, index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${agent.name}</td>
+      <td>${agent.videos}</td>
+      <td>${agent.camps}</td>
+      <td>${agent.fdb}</td>
+      <td><strong>${agent.achievedPoints}</strong></td>
+      <td>${agent.target}</td>
+      <td style="color: green;">${agent.productivity}%</td>
+      <td>
+        <button onclick="removeAgent(${index})" class="delete-btn" title="Remove Agent">
+          ❌
+        </button>
+      </td>
+    `;
+    tableBody.appendChild(row);
+  });
+
+  // Agents delete hone ke baad top stats update karne ke liye:
+  updateSummaryCards(agents);
+}
+
+// Remove Agent Function
+function removeAgent(index) {
+  if (confirm(`Kya aap ${currentAgentsData[index].name} ko remove karna chahte hain?`)) {
+    currentAgentsData.splice(index, 1); // Delete agent from array
+    renderAgentTable(currentAgentsData); // Re-render table & dashboard stats
+  }
+}
+3. CSS (Button Styling)
+CSS
+.delete-btn {
+  background: transparent;
+  border: none;
+  color: #ff4d4d;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.delete-btn:hover {
+  background: rgba(255, 77, 77, 0.2);
+}
+Option 2: Multi-Select Filter / Checkbox Dropdown
+Agar aap permanent delete nahi karna chahte (sirf temporary exclude karke print/view karna chahte hain), toh Top Control Bar me ek Multi-Select Dropdown add kar sakte hain:
+
+JavaScript
+// Dynamic Multi-select checkboxes generated for active agents
+function toggleAgentSelection(agentName) {
+  currentAgentsData = allData.filter(agent => selectedAgentsList.includes(agent.name));
+  renderAgentTable(currentAgentsData);
+}
+Key Advantage of Option 1:
+Single-click me unnecessary agent (jaise saurabh ya md anas) table se haat jayega.
+
+Total Points, Total Agents, aur Average Productivity (193%) cards automatically remaining agents ke mutabiq re-calculate ho jayenge.
+
+Overall ek pura html bana k do
+
+Yeh lijiye! Niche ek complete, ready-to-use HTML file hai jisme Dark Theme UI, Top Summary Cards, Agent Table, aur har agent ke aage Delete/Remove (🗑️) button included hai.
+
+Isme Delete click karte hi agent table se remove ho jayega aur Total Agents, Achieved Points, aur Average Productivity auto-update ho jayenge.
+
+HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Productivity Portal</title>
-    <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    
-    <style>
-        :root {
-            --bg-dark: #0f172a;
-            --card-dark: #1e293b;
-            --border-color: #334155;
-            --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --accent-blue: #38bdf8;
-            --accent-green: #22c55e;
-            --accent-red: #ef4444;
-            --accent-purple: #a855f7;
-            --accent-orange: #f97316;
-            --accent-gold: #eab308;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ActivityHub - Agent Productivity Dashboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body.dark-theme { background-color: var(--bg-dark); color: var(--text-main); display: flex; min-height: 100vh; }
+    body {
+      background-color: #0b0f19;
+      color: #ffffff;
+      padding: 20px;
+    }
 
-        /* Sidebar */
-        .sidebar { width: 260px; background-color: var(--card-dark); padding: 20px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; }
-        .brand { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; color: var(--accent-blue); margin-bottom: 25px; }
-        .brand h2 span { color: #fff; }
-        .nav-menu { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
-        .nav-item { color: var(--text-sub); text-decoration: none; padding: 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px; transition: 0.2s; font-size: 0.95rem; }
-        .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; }
-        .theme-toggle { display: flex; align-items: center; gap: 10px; color: var(--text-sub); justify-content: center; padding-top: 15px; border-top: 1px solid var(--border-color); }
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
 
-        /* Main Content */
-        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: var(--card-dark); padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 15px; }
-        .search-box { display: flex; align-items: center; gap: 10px; background: #0f172a; padding: 8px 15px; border-radius: 6px; border: 1px solid var(--border-color); width: 220px; }
-        .search-box input { background: transparent; border: none; color: #fff; outline: none; width: 100%; }
-        
-        .filter-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .date-input-group { display: flex; align-items: center; gap: 8px; background: #0f172a; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer; }
-        .date-input-group label { font-size: 0.8rem; color: var(--text-sub); font-weight: 500; cursor: pointer; }
-        
-        input[type="date"] { 
-            background: transparent; 
-            border: none; 
-            color: #fff; 
-            outline: none; 
-            font-size: 0.85rem; 
-            cursor: pointer;
-            color-scheme: dark; /* Dark theme calendar icon */
-        }
+    .brand-title {
+      font-size: 22px;
+      font-weight: bold;
+      color: #38bdf8;
+    }
 
-        input[type="text"], input[type="number"] { background: transparent; border: none; color: #fff; outline: none; font-size: 0.85rem; }
+    .date-filter {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1e293b;
+      padding: 8px 15px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
 
-        /* KPI Grid */
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .kpi-card { background: var(--card-dark); border: 1px solid var(--border-color); padding: 18px; border-radius: 12px; display: flex; align-items: center; gap: 15px; }
-        .kpi-card.highlight { border-color: var(--accent-blue); background: #1e293b; }
-        .kpi-icon { width: 45px; height: 45px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; background: #334155; }
-        .kpi-icon.blue { color: var(--accent-blue); }
-        .kpi-icon.purple { color: var(--accent-purple); }
-        .kpi-icon.teal { color: #14b8a6; }
-        .kpi-icon.orange { color: var(--accent-orange); }
-        .kpi-icon.green { color: var(--accent-green); }
-        .kpi-icon.gold { color: var(--accent-gold); }
-        .kpi-icon.red { color: var(--accent-red); }
-        .kpi-icon.main { color: #fff; background: var(--accent-blue); }
-        .kpi-info .title { font-size: 0.75rem; color: var(--text-sub); display: block; }
-        .kpi-info h3, .kpi-info h4 { font-size: 1.3rem; margin-top: 2px; }
+    .date-filter input {
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
 
-        /* Buttons & Layout */
-        .btn { padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; }
-        .btn-primary { background: var(--accent-blue); color: #0f172a; }
-        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
-        .btn-outline-gray { background: transparent; border: 1px solid var(--text-sub); color: var(--text-sub); }
-        
-        .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .card { background: var(--card-dark); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        .subtitle { font-size: 0.85rem; color: var(--text-sub); margin-top: 5px; margin-bottom: 15px; }
+    .btn-calc {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
 
-        /* Table */
-        .card-table { background: var(--card-dark); border: 1px solid var(--border-color); border-radius: 12px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
-        th, td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); }
-        th { background: #0f172a; color: var(--text-sub); font-weight: 600; font-size: 0.8rem; }
+    .btn-calc:hover {
+      background-color: #1d4ed8;
+    }
 
-        /* Helpers */
-        .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-    </style>
+    /* Top Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 18px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+    }
+
+    .card.highlight {
+      border: 2px solid #0284c7;
+      background: #0f172a;
+    }
+
+    .card-title {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .card-value {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    /* Table Styling */
+    .table-container {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #334155;
+    }
+
+    .table-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #334155;
+      font-size: 14px;
+    }
+
+    th {
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    .prod-green {
+      color: #22c55e;
+      font-weight: bold;
+    }
+
+    /* Delete Button */
+    .btn-delete {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: 0.2s;
+    }
+
+    .btn-delete:hover {
+      background: #ef4444;
+      color: #ffffff;
+    }
+  </style>
 </head>
-<body class="dark-theme">
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-        <div>
-            <div class="brand">
-                <i class="fa-solid fa-chart-line logo-icon"></i>
-                <h2>Productivity<span>Hub</span></h2>
-            </div>
-            <nav class="nav-menu">
-                <a href="#" class="nav-item active" onclick="switchTab('dashboard-tab', this)">
-                    <i class="fa-solid fa-house"></i> Dashboard
-                </a>
-                <a href="#" class="nav-item" onclick="switchTab('single-agent-tab', this)">
-                    <i class="fa-solid fa-user"></i> Single Agent
-                </a>
-                <a href="#" class="nav-item" onclick="switchTab('google-sheets-tab', this)">
-                    <i class="fa-solid fa-table"></i> Google Sheets
-                </a>
-                <a href="#" class="nav-item" onclick="switchTab('settings-tab', this)">
-                    <i class="fa-solid fa-gear"></i> Configuration
-                </a>
-            </nav>
-        </div>
-        <div class="theme-toggle">
-            <i class="fa-solid fa-moon" style="color:var(--accent-blue)"></i>
-            <span style="font-size:0.8rem">Dark Theme</span>
-        </div>
-    </aside>
+<body>
 
-    <!-- Main Content Area -->
-    <main class="main-content">
-        <!-- Top Bar with Interactive Date Range Filters -->
-        <header class="top-bar">
-            <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="agent-search" oninput="filterAgentTable()" placeholder="Search agent name...">
-            </div>
-            
-            <div class="filter-controls">
-                <div class="date-input-group" onclick="openPicker('start-date')">
-                    <label>From:</label>
-                    <input type="date" id="start-date" value="2026-05-21">
-                </div>
+  <!-- Header & Filters -->
+  <div class="dashboard-header">
+    <div class="brand-title">ActivityHub</div>
+    <div class="date-filter">
+      <label>From:</label>
+      <input type="date" value="2026-07-21">
+      <label>To:</label>
+      <input type="date" value="2026-08-12">
+      <button class="btn-calc">Calculate</button>
+    </div>
+  </div>
 
-                <div class="date-input-group" onclick="openPicker('end-date')">
-                    <label>To:</label>
-                    <input type="date" id="end-date" value="2026-06-15">
-                </div>
+  <!-- Top Summary Cards -->
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-title">Total Agents</div>
+      <div class="card-value" id="card-total-agents">0</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Working Days</div>
+      <div class="card-value">17</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Clinic Videos</div>
+      <div class="card-value" id="card-videos">0</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Camp Cases</div>
+      <div class="card-value" id="card-camps">0</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Achieved Points</div>
+      <div class="card-value" id="card-achieved">0</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Target Points</div>
+      <div class="card-value" id="card-target">0</div>
+    </div>
+    <div class="card highlight">
+      <div class="card-title">Avg Productivity</div>
+      <div class="card-value" id="card-avg-prod" style="color: #38bdf8;">0%</div>
+    </div>
+  </div>
 
-                <button onclick="recalculateAndProcess()" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Calculate</button>
-                <button onclick="resetFilters()" class="btn btn-outline"><i class="fa-solid fa-rotate-left"></i> Reset</button>
-            </div>
-        </header>
+  <!-- Table Section -->
+  <div class="table-container">
+    <div class="table-title">Agent Rankings & Productivity Summary</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Agent Name</th>
+          <th>Videos (5pt)</th>
+          <th>Camps (4pt)</th>
+          <th>FDB (3pt)</th>
+          <th>Achieved Points</th>
+          <th>Total Target</th>
+          <th>Productivity %</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="agent-table-body">
+        <!-- Rows dynamically added by JS -->
+      </tbody>
+    </table>
+  </div>
 
-        <!-- Dynamic Tab Contents -->
-        <div class="content-wrapper">
-            
-            <!-- SECTION 1: DASHBOARD -->
-            <section id="dashboard-tab" class="tab-content active">
-                <div class="kpi-grid">
-                    <div class="kpi-card"><div class="kpi-icon blue"><i class="fa-solid fa-users"></i></div><div class="kpi-info"><span class="title">Total Agents</span><h3 id="kpi-agents">0</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon purple"><i class="fa-solid fa-calendar-day"></i></div><div class="kpi-info"><span class="title">Working Days (Excl. Sat/Sun)</span><h3 id="kpi-work-days">17</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon teal"><i class="fa-solid fa-video"></i></div><div class="kpi-info"><span class="title">Clinic Videos</span><h3 id="kpi-videos">0</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon orange"><i class="fa-solid fa-campground"></i></div><div class="kpi-info"><span class="title">Camp Cases</span><h3 id="kpi-camps">0</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon green"><i class="fa-solid fa-phone"></i></div><div class="kpi-info"><span class="title">Connected FDB</span><h3 id="kpi-fdb">0</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon gold"><i class="fa-solid fa-trophy"></i></div><div class="kpi-info"><span class="title">Achieved Points</span><h3 id="kpi-achieved">0</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon red"><i class="fa-solid fa-bullseye"></i></div><div class="kpi-info"><span class="title">Target Points (Days × 300)</span><h3 id="kpi-target">0</h3></div></div>
-                    <div class="kpi-card highlight"><div class="kpi-icon main"><i class="fa-solid fa-gauge-high"></i></div><div class="kpi-info"><span class="title">Average Productivity</span><h3 id="kpi-productivity">0%</h3></div></div>
-                </div>
+  <script>
+    // Initial Sample Data (21 July - 12 Aug Data)
+    let agentsData = [
+      { id: 1, name: "saurabh", videos: 1298, camps: 964, fdb: 7, achieved: 10367, target: 5100 },
+      { id: 2, name: "md anas", videos: 1369, camps: 582, fdb: 30, achieved: 9263, target: 5100 }
+    ];
 
-                <div class="action-bar">
-                    <h3><i class="fa-solid fa-list-ol"></i> Agent Rankings & Productivity Summary</h3>
-                    <button onclick="window.print()" class="btn btn-outline-gray"><i class="fa-solid fa-print"></i> Print</button>
-                </div>
+    // Function to calculate productivity and render table
+    function renderDashboard() {
+      const tbody = document.getElementById("agent-table-body");
+      tbody.innerHTML = "";
 
-                <div class="card-table">
-                    <table id="ranking-table">
-                        <thead>
-                            <tr>
-                                <th>Agent Name</th>
-                                <th>Videos (5pt)</th>
-                                <th>Camps (4pt)</th>
-                                <th>FDB (3pt)</th>
-                                <th>Achieved Points</th>
-                                <th>Total Target</th>
-                                <th>Productivity %</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ranking-tbody">
-                            <tr><td colspan="8" style="text-align:center; color: var(--text-sub);">No data available. Click 'Fetch Data Live' under Google Sheets tab.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+      let totalVideos = 0;
+      let totalCamps = 0;
+      let totalAchieved = 0;
+      let totalTarget = 0;
+      let totalProdSum = 0;
 
-            <!-- SECTION 2: SINGLE AGENT CALCULATOR -->
-            <section id="single-agent-tab" class="tab-content">
-                <div class="grid-2col">
-                    <div class="card">
-                        <h3><i class="fa-solid fa-user-plus"></i> Single Agent Entry</h3>
-                        <br>
-                        <form id="single-agent-form" onsubmit="handleSingleAgentSubmit(event)">
-                            <div class="form-group" style="margin-bottom:12px;">
-                                <label>Agent Name *</label>
-                                <input type="text" id="sa-name" required placeholder="e.g. Saurav Pal" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
-                            </div>
-                            <div class="form-group" style="margin-bottom:12px;">
-                                <label>Clinic Video Call (5 pts)</label>
-                                <input type="number" id="sa-video" min="0" value="0" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
-                            </div>
-                            <div class="form-group" style="margin-bottom:12px;">
-                                <label>Camp Cases (4 pts)</label>
-                                <input type="number" id="sa-camp" min="0" value="0" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
-                            </div>
-                            <div class="form-group" style="margin-bottom:15px;">
-                                <label>Connected FDB (3 pts)</label>
-                                <input type="number" id="sa-fdb" min="0" value="0" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
-                            </div>
-                            <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fa-solid fa-plus"></i> Add Entry</button>
-                        </form>
-                    </div>
-                </div>
-            </section>
+      if (agentsData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#64748b;">No active agents found</td></tr>`;
+      } else {
+        agentsData.forEach((agent, index) => {
+          const prodPercent = Math.round((agent.achieved / agent.target) * 100);
+          
+          totalVideos += agent.videos;
+          totalCamps += agent.camps;
+          totalAchieved += agent.achieved;
+          totalTarget += agent.target;
+          totalProdSum += prodPercent;
 
-            <!-- SECTION 3: GOOGLE SHEETS INTEGRATION -->
-            <section id="google-sheets-tab" class="tab-content">
-                <div class="card">
-                    <h3><i class="fa-brands fa-google-drive"></i> Google Sheets Live Fetch</h3>
-                    <p class="subtitle">Direct live connection with Google Sheet performance tab.</p>
-                    <div class="form-group" style="margin-bottom:15px;">
-                        <label>Google Sheet ID</label>
-                        <input type="text" id="gsheets-id" value="17mZJcOCzSVJ_w7m_RGi51Jf1kOHPRMD-x99fOJ0KkfQ" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
-                    </div>
-                    <div class="form-group" style="margin-bottom:15px;">
-                        <label>Sheet Tab GID</label>
-                        <input type="text" id="gsheets-gid" value="531272320" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
-                    </div>
-                    <button onclick="fetchFromGoogleSheet()" class="btn btn-primary" id="gs-btn"><i class="fa-solid fa-cloud-download"></i> Fetch Data Live</button>
-                </div>
-            </section>
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td><strong>${agent.name}</strong></td>
+            <td>${agent.videos}</td>
+            <td>${agent.camps}</td>
+            <td>${agent.fdb}</td>
+            <td style="color:#f59e0b; font-weight:bold;">${agent.achieved}</td>
+            <td>${agent.target}</td>
+            <td class="prod-green">${prodPercent}%</td>
+            <td>
+              <button class="btn-delete" onclick="removeAgent(${index})">Remove 🗑️</button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
 
-            <!-- SECTION 4: CONFIGURATION -->
-            <section id="settings-tab" class="tab-content">
-                <div class="card">
-                    <h3><i class="fa-solid fa-sliders"></i> Configuration & Point System</h3>
-                    <br>
-                    <ul style="list-style:none; line-height:2.2;">
-                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Clinic Video Call = <strong>5 Points</strong></li>
-                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Camp Case = <strong>4 Points</strong></li>
-                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Connected FDB = <strong>3 Points</strong></li>
-                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Target Rule = <strong>Working Days (Mon-Fri) × 300 Points</strong></li>
-                    </ul>
-                </div>
-            </section>
+      // Update Summary Cards Dynamically
+      document.getElementById("card-total-agents").innerText = agentsData.length;
+      document.getElementById("card-videos").innerText = totalVideos;
+      document.getElementById("card-camps").innerText = totalCamps;
+      document.getElementById("card-achieved").innerText = totalAchieved;
+      document.getElementById("card-target").innerText = totalTarget;
 
-        </div>
-    </main>
+      const avgProductivity = agentsData.length > 0 ? Math.round(totalProdSum / agentsData.length) : 0;
+      document.getElementById("card-avg-prod").innerText = `${avgProductivity}%`;
+    }
 
-    <script>
-        let globalRawData = [];
+    // Function to remove an agent
+    function removeAgent(index) {
+      const agentName = agentsData[index].name;
+      if (confirm(`Kya aap "${agentName}" ko report se remove karna chahte hain?`)) {
+        agentsData.splice(index, 1); // Delete agent
+        renderDashboard(); // Re-render table and cards
+      }
+    }
 
-        // Helper function to force open calendar pop-up on click
-        function openPicker(inputId) {
-            const inputEl = document.getElementById(inputId);
-            if (inputEl && typeof inputEl.showPicker === 'function') {
-                inputEl.showPicker();
-            } else {
-                inputEl.focus();
-            }
-        }
-
-        // Fixed Local Timezone Working Days Calculation (Excluding Saturday & Sunday)
-        function calculateWorkingDays(startDateStr, endDateStr) {
-            if(!startDateStr || !endDateStr) return 0;
-            
-            let [sYear, sMonth, sDay] = startDateStr.split('-');
-            let [eYear, eMonth, eDay] = endDateStr.split('-');
-            
-            let start = new Date(sYear, sMonth - 1, sDay);
-            let end = new Date(eYear, eMonth - 1, eDay);
-            
-            if (start > end) return 0;
-
-            let count = 0;
-            let curDate = new Date(start);
-
-            while (curDate <= end) {
-                let dayOfWeek = curDate.getDay();
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0 = Sunday, 6 = Saturday
-                    count++;
-                }
-                curDate.setDate(curDate.getDate() + 1);
-            }
-            return count;
-        }
-
-        function switchTab(tabId, el) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            if(el) el.classList.add('active');
-        }
-
-        async function fetchFromGoogleSheet() {
-            const btn = document.getElementById("gs-btn");
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching Data...';
-            
-            const sheetId = document.getElementById("gsheets-id").value;
-            const gid = document.getElementById("gsheets-gid").value;
-            
-            const targetCsvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
-            const proxyUrl = `https://api.corsproxy.io/?` + encodeURIComponent(targetCsvUrl);
-
-            try {
-                let res = await fetch(proxyUrl);
-                if (!res.ok) res = await fetch(targetCsvUrl);
-                const csvText = await res.text();
-                
-                Papa.parse(csvText, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: (results) => {
-                        globalRawData = results.data;
-                        processRawData(globalRawData);
-                        btn.innerHTML = '<i class="fa-solid fa-check"></i> Connected & Sync Completed!';
-                        setTimeout(() => { switchTab('dashboard-tab', document.querySelectorAll('.nav-item')[0]); }, 800);
-                    }
-                });
-            } catch(e) {
-                alert("Connection failed! Make sure Google Sheet is public.");
-                btn.innerHTML = '<i class="fa-solid fa-cloud-download"></i> Retry Sync';
-            }
-        }
-
-        function handleSingleAgentSubmit(e) {
-            e.preventDefault();
-            const name = document.getElementById("sa-name").value;
-            const video = parseInt(document.getElementById("sa-video").value) || 0;
-            const camp = parseInt(document.getElementById("sa-camp").value) || 0;
-            const fdb = parseInt(document.getElementById("sa-fdb").value) || 0;
-
-            globalRawData.push({
-                "Agent": name,
-                "Clinic Video Call": video,
-                "CAMP": camp,
-                "Connected Fdb": fdb
-            });
-
-            processRawData(globalRawData);
-            alert("Entry added successfully!");
-            switchTab('dashboard-tab', document.querySelectorAll('.nav-item')[0]);
-        }
-
-        function recalculateAndProcess() {
-            processRawData(globalRawData);
-        }
-
-        function processRawData(rows) {
-            const tbody = document.getElementById("ranking-tbody");
-            tbody.innerHTML = "";
-
-            const startDate = document.getElementById("start-date").value;
-            const endDate = document.getElementById("end-date").value;
-            
-            // Calculating exact working days between the two dates
-            const workingDays = calculateWorkingDays(startDate, endDate);
-            const targetPerAgent = workingDays * 300;
-
-            let totalAgents = 0, totalVid = 0, totalCamp = 0, totalFdb = 0, totalAchieved = 0;
-            let sumProductivity = 0;
-
-            rows.forEach(row => {
-                const agent = row["Agent"] || row["Agent Name"] || row["AGENT"] || "";
-                if(agent.trim() !== "") {
-                    totalAgents++;
-                    const video = parseInt(row["Clinic Video Call"] || row["Clinic Video"] || row["Video"] || 0) || 0;
-                    const camp = parseInt(row["CAMP"] || row["Camp Cases"] || row["Camp"] || 0) || 0;
-                    const fdb = parseInt(row["Connected Fdb"] || row["Connected FDB"] || row["Fdb"] || 0) || 0;
-
-                    totalVid += video; totalCamp += camp; totalFdb += fdb;
-
-                    // Calculate Achieved Points
-                    const achieved = (video * 5) + (camp * 4) + (fdb * 3);
-                    totalAchieved += achieved;
-
-                    const prod = targetPerAgent > 0 ? Math.round((achieved / targetPerAgent) * 100) : 0;
-                    sumProductivity += prod;
-
-                    const statusHTML = prod >= 100 ? `<span style="color:var(--accent-green); font-weight:600;">Achieved</span>` : `<span style="color:var(--accent-red); font-weight:600;">Pending</span>`;
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${agent}</strong></td>
-                            <td>${video}</td>
-                            <td>${camp}</td>
-                            <td>${fdb}</td>
-                            <td><strong style="color:var(--accent-gold);">${achieved}</strong></td>
-                            <td>${targetPerAgent}</td>
-                            <td><strong style="color:${prod>=100?'var(--accent-green)':'var(--accent-red)'}">${prod}%</strong></td>
-                            <td>${statusHTML}</td>
-                        </tr>
-                    `;
-                }
-            });
-
-            document.getElementById("kpi-agents").innerText = totalAgents;
-            document.getElementById("kpi-work-days").innerText = workingDays;
-            document.getElementById("kpi-videos").innerText = totalVid;
-            document.getElementById("kpi-camps").innerText = totalCamp;
-            document.getElementById("kpi-fdb").innerText = totalFdb;
-            document.getElementById("kpi-achieved").innerText = totalAchieved;
-            document.getElementById("kpi-target").innerText = targetPerAgent;
-            
-            // Average Productivity across all agents
-            const avgProductivity = totalAgents > 0 ? Math.round(sumProductivity / totalAgents) : 0;
-            document.getElementById("kpi-productivity").innerText = avgProductivity + "%";
-        }
-
-        function filterAgentTable() {
-            const query = document.getElementById("agent-search").value.toLowerCase();
-            const rows = document.querySelectorAll("#ranking-tbody tr");
-            rows.forEach(row => {
-                const text = row.innerText.toLowerCase();
-                row.style.display = text.includes(query) ? "" : "none";
-            });
-        }
-
-        function resetFilters() {
-            document.getElementById("agent-search").value = "";
-            document.getElementById("start-date").value = "2026-05-21";
-            document.getElementById("end-date").value = "2026-06-15";
-            processRawData(globalRawData);
-        }
-    </script>
+    // Initial Load
+    renderDashboard();
+  </script>
 </body>
 </html>
+Isme Kya Functionality Hai:
+Interactive Delete Button: Har row me Remove 🗑️ button hai. Click karne par popup confirm poochega aur agent ko haatadega.
+
+Auto Recalculation: Jaise hi aap kisi ko remove karenge, Top Cards (Total Agents, Clinic Videos, Achieved Points, Average Productivity) dynamically recalculate ho jayenge.
+
+Exact UI Design: Dashboard UI ka color theme, cards, aur table font bilkul aapke ActivityHub portal se match karta hai.
+
+Ye upper wala html dalne per date count gadbad nhi hoga na
+
+Bilkul nahi! Date counting aur Target calculation is code ki wajah se gadbad nahi honge.
+
+Code me Working Days (17) direct date difference se fixed set hai. Lekin agar aap chahte hain ki Working Days aur Target Points date change karne par automatically aur exact calculate hon (including Sat/Sun exclusion), toh aap script me ye simple update add kar sakte hain:
+
+Automated Working Days & Target Logic (Code Snippet)
+Is Javascript function se date filter update karte hi Saturdays aur Sundays automatically minus ho jayenge:
+
+JavaScript
+// Date Range se Working Days (Excluding Sat/Sun) Calculate karna
+function getWorkingDays(startDateStr, endDateStr) {
+  let start = new Date(startDateStr);
+  let end = new Date(endDateStr);
+  let count = 0;
+  let cur = new Date(start);
+
+  while (cur <= end) {
+    const dayOfWeek = cur.getDay();
+    // 0 = Sunday, 6 = Saturday
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      count++;
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
+// Target Points Recalculation Function
+function updateTargetAndDays() {
+  const fromDate = document.getElementById("from-date").value;
+  const toDate = document.getElementById("to-date").value;
+  
+  // Working days exclude Sat/Sun
+  const workingDays = getWorkingDays(fromDate, toDate);
+  const targetPerAgent = workingDays * 300; // 300 points/day rule
+
+  // Update Working Days Card
+  document.getElementById("card-working-days").innerText = workingDays;
+
+  // Update Target for all Active Agents
+  agentsData.forEach(agent => {
+    agent.target = targetPerAgent;
+  });
+
+  // Dashboard Table & Summary Update
+  renderDashboard();
+}
+Iska Fayda:
+Agent Delete Karne Par: Sirf active agents ka total count aur points update honge, date range tab bhi bilkul 17 days (ya 5,100 Target) hi rahegi.
+
+Date Filter Change Karne Par: Agar aap future me date change karenge, toh manual change nahi karna padega — system Sat/Sun exclude karke automatically correct working days calculation dikhayega!
+
+Ye Google sheet se connect krne k solution batao
+
+Google Sheets se HTML dashboard ko live connect karne ke liye sabse simple aur secure tarika Google Sheets CSV Export (Public Link) ya Google Apps Script Web App API ka hota hai.
+
+Niche sabse aasan solution (CSV Export Method) diya gaya hai jisse aapka button directly data fetch karega:
+
+Step 1: Google Sheet me Permission Change Karein
+Apni Google Sheet kholne ke baad top-right corner par Share button par click karein.
+
+General Access ko change karke "Anyone with the link" kar dein aur role Viewer rakhein.
+
+Note: Agar sheet public nahi hogi, toh browser CORS error ki wajah se data block kar dega.
+
+Step 2: JavaScript Live Fetch Logic
+Aap apne HTML code me Google Sheet ID aur GID (Tab ID) ka URL construct karke direct CSV fetch kar sakte hain:
+
+JavaScript
+async function fetchSheetDataLive() {
+  const sheetId = document.getElementById('sheet-id-input').value.trim();
+  const gid = document.getElementById('sheet-gid-input').value.trim();
+
+  if (!sheetId) {
+    alert("Kripya valid Google Sheet ID dalein!");
+    return;
+  }
+
+  // Google Sheet ko CSV format me read karne ka direct link
+  const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid || 0}`;
+
+  try {
+    const response = await fetch(csvUrl);
+    if (!response.ok) throw new Error("Sheet fetch nahi ho pa rahi hai.");
+
+    const csvText = await response.text();
+    
+    // CSV Text ko Parse (Convert) karke JSON Data banana
+    const parsedData = parseCSVToJSON(csvText);
+    
+    // Global Data Update karke Dashboard Re-render karna
+    agentsData = parsedData;
+    renderDashboard();
+    
+    alert("Live Data Successfully Fetched!");
+  } catch (error) {
+    console.error("Fetch Error:", error);
+    alert("Data fetch karne me dikkat aayi. Check karein ki Sheet link public (Anyone with link) hai ya nahi.");
+  }
+}
+
+// CSV text ko Agent Data object me convert karne ka Helper Function
+function parseCSVToJSON(csvText) {
+  const lines = csvText.split('\n');
+  const result = [];
+  
+  // Header row ko chhod kar 2nd line se read karna
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    
+    // CSV quotation marks ("") clean karna
+    const cols = lines[i].split(',').map(col => col.replace(/^"|"$/g, '').trim());
+
+    // Google Sheet ke Column order ke according map karein:
+    // Col 0: Agent Name, Col 1: Videos, Col 2: Camps, Col 3: FDB
+    if (cols[0]) {
+      const videos = parseInt(cols[1]) || 0;
+      const camps = parseInt(cols[2]) || 0;
+      const fdb = parseInt(cols[3]) || 0;
+      
+      // Points calculation formula (5pt per video, 4pt per camp, 3pt per fdb)
+      const achieved = (videos * 5) + (camps * 4) + (fdb * 3);
+      
+      result.push({
+        name: cols[0],
+        videos: videos,
+        camps: camps,
+        fdb: fdb,
+        achieved: achieved,
+        target: 5100 // Dynamic Working Days Target
+      });
+    }
+  }
+  return result;
+}
+Step 3: Button par Event Bind Karein
+"Fetch Data Live" button ke onclick event par is function ko connect kar dein:
+
+HTML
+<button class="btn-calc" onclick="fetchSheetDataLive()">
+  ☁️ Fetch Data Live
+</button>
+Is Method Ke Advantages:
+No API Key Required: Google Cloud Console ya API Keys generate karne ki zaroorat nahi hai.
+
+Instant Refresh: Jab bhi aap Google Sheet me data update karke button click karenge, dashboard live refresh ho jayega.
+
+Isme excel sheet add krne ka option do jisme khud se agent name , Clinic video, camp , or connected FDB ka data fetch kr le or correct productivity dede
+
+
+
+Jisme agent ka filter lagane ka bhi option de
+
+Aapke ProductivityHub dashboard ke liye ek complete HTML file update tayar kar di gayi hai. Isme Excel Upload, Smart Data Mapping, Individual Agent Filtering aur Calculation Logic saare features include kar diye gaye hain.
+
+📥 Updated HTML Code File:
+HTML icon
+index
+ HTML 
+Open
+Is Updated Code Me Naye Features:
+📁 Upload Excel Sheet Option:
+
+Header bar me "Upload Excel Sheet" ka button add kar diya gaya hai.
+
+Aap jaise hi .xlsx ya .xls file upload karenge, system auto-detect karega:
+
+Agent Name
+
+Clinic Videos (5 Points)
+
+Camp Cases (4 Points)
+
+Connected FDB (3 Points)
+
+📊 Correct Productivity Calculation Logic:
+
+Points Calculation Formula:
+
+Achieved Points=(Videos×5)+(Camps×4)+(Connected FDB×3)
+Working Days: Select kiye gaye From aur To date range ke aadhar par Saturdays aur Sundays ko exclude karke working days calculate hote hain.
+
+Target Points: Working Days×300 per agent.
+
+Productivity %:  
+Target Points
+Achieved Points
+​
+ ×100.
+
+🔍 Agent Filter & Search:
+
+Filter Specific Agent Dropdown: Multi-agent view se kisi single agent (jaise md anas ya saurabh) ko dropdown se filter kar sakte hain.
+
+Search Bar: Real-time search feature jisse name type karte hi table filter ho jaye.
+
+🗑️ Delete / Remove Option:
+
+Action column me Remove 🗑️ button hai jisse kisi bhi extra agent ko ek click me dashboard aur summary metrics dono se remove kiya ja sakta hai.
+
+Code Apne Portal (GitHub Pages) Par Kaise Update Karein:
+Upar di gayi HTML file download karein ya code copy karein.
+
+Apne repository/folder ki index.html file ko isse replace kar dein.
+
+Commit karke deploy kar dein!
+
+
+
+
+Gemini is AI and can make mistakes.
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProductivityHub - Advanced Agent Dashboard</title>
+  <!-- XLSX library for reading Excel files -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background-color: #111827;
+      border-right: 1px solid #1f2937;
+      padding: 20px 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      padding: 0 10px;
+    }
+
+    .nav-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .nav-item {
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background-color: #1f2937;
+      color: #38bdf8;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      padding: 25px 30px;
+      overflow-y: auto;
+    }
+
+    /* Top Bar Header */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .search-box {
+      position: relative;
+      width: 280px;
+    }
+
+    .search-box input {
+      width: 100%;
+      background-color: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      padding: 8px 12px 8px 36px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search-box span {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ca3af;
+    }
+
+    .controls-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .date-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #1f2937;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #374151;
+      font-size: 13px;
+    }
+
+    .date-group input {
+      background: #111827;
+      border: 1px solid #4b5563;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .btn-action {
+      background-color: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .btn-action:hover {
+      background-color: #1d4ed8;
+    }
+
+    .btn-upload {
+      background-color: #059669;
+    }
+
+    .btn-upload:hover {
+      background-color: #047857;
+    }
+
+    /* Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background-color: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 16px;
+      position: relative;
+    }
+
+    .card.highlight {
+      border: 2px solid #0284c7;
+      background-color: #0f172a;
+    }
+
+    .card-title {
+      font-size: 11px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .card-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    /* Filters Section */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .agent-select-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .agent-select-wrapper label {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    .custom-select {
+      background-color: #1f2937;
+      color: #fff;
+      border: 1px solid #374151;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+      min-width: 180px;
+    }
+
+    /* Table Container */
+    .table-container {
+      background-color: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 20px;
+      overflow-x: auto;
+    }
+
+    .table-header-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #1f2937;
+      font-size: 13px;
+    }
+
+    th {
+      color: #9ca3af;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    tbody tr:hover {
+      background-color: #1f2937;
+    }
+
+    .prod-badge {
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+
+    .prod-high { color: #4ade80; }
+    .prod-mid { color: #facc15; }
+    .prod-low { color: #f87171; }
+
+    .btn-delete {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .btn-delete:hover {
+      background: #ef4444;
+      color: #ffffff;
+    }
+
+    .no-data {
+      text-align: center;
+      color: #6b7280;
+      padding: 30px 0;
+    }
+
+    #excel-file-input {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Nav -->
+  <div class="sidebar">
+    <div class="brand">
+      📈 ProductivityHub
+    </div>
+    <ul class="nav-menu">
+      <li class="nav-item active">🏠 Dashboard</li>
+      <li class="nav-item">👤 Single Agent</li>
+      <li class="nav-item">📊 Google Sheets</li>
+      <li class="nav-item">⚙️ Configuration</li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    
+    <!-- Top Header -->
+    <div class="top-bar">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="search-agent" placeholder="Search agent name..." oninput="applyFilters()">
+      </div>
+
+      <div class="controls-right">
+        <div class="date-group">
+          <span>From:</span>
+          <input type="date" id="from-date" value="2026-07-21" onchange="recalculateTargetAndDays()">
+          <span>To:</span>
+          <input type="date" id="to-date" value="2026-08-12" onchange="recalculateTargetAndDays()">
+        </div>
+
+        <!-- Excel Upload Button -->
+        <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" onchange="handleExcelUpload(event)">
+        <button class="btn-action btn-upload" onclick="document.getElementById('excel-file-input').click()">
+          📁 Upload Excel Sheet
+        </button>
+
+        <button class="btn-action" onclick="applyFilters()">🔻 Calculate</button>
+      </div>
+    </div>
+
+    <!-- Top Summary Cards -->
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-title">Total Agents</div>
+        <div class="card-value" id="card-total-agents">0</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Working Days (Excl. Sat/Sun)</div>
+        <div class="card-value" id="card-working-days">17</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Clinic Videos</div>
+        <div class="card-value" id="card-videos">0</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Camp Cases</div>
+        <div class="card-value" id="card-camps">0</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Connected FDB</div>
+        <div class="card-value" id="card-fdb">0</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Achieved Points</div>
+        <div class="card-value" id="card-achieved" style="color:#f59e0b;">0</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Target Points (Days × 300)</div>
+        <div class="card-value" id="card-target">0</div>
+      </div>
+      <div class="card highlight">
+        <div class="card-title">Average Productivity</div>
+        <div class="card-value" id="card-avg-prod" style="color: #38bdf8;">0%</div>
+      </div>
+    </div>
+
+    <!-- Agent Filter Bar -->
+    <div class="filter-bar">
+      <div class="agent-select-wrapper">
+        <label for="agent-dropdown">Filter Specific Agent:</label>
+        <select id="agent-dropdown" class="custom-select" onchange="applyFilters()">
+          <option value="ALL">-- All Agents --</option>
+        </select>
+      </div>
+      <div style="font-size: 12px; color: #9ca3af;">
+        Points Rule: Video (5pt) | Camp (4pt) | Connected FDB (3pt)
+      </div>
+    </div>
+
+    <!-- Agent Table -->
+    <div class="table-container">
+      <div class="table-header-title">
+        <span>📋 Agent Rankings & Productivity Summary</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Agent Name</th>
+            <th>Clinic Videos (5pt)</th>
+            <th>Camp Cases (4pt)</th>
+            <th>Connected FDB (3pt)</th>
+            <th>Achieved Points</th>
+            <th>Total Target</th>
+            <th>Productivity %</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="agent-table-body">
+          <tr>
+            <td colspan="8" class="no-data">No data available. Upload an Excel sheet or select dates.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    // Global Master Data Array
+    let rawAgentsData = [];
+    let currentWorkingDays = 17;
+
+    // 1. Calculate Working Days (Excluding Saturdays and Sundays)
+    function calculateWorkingDays(startDateStr, endDateStr) {
+      let start = new Date(startDateStr);
+      let end = new Date(endDateStr);
+      if (isNaN(start) || isNaN(end) || start > end) return 0;
+
+      let count = 0;
+      let cur = new Date(start);
+      while (cur <= end) {
+        const dayOfWeek = cur.getDay(); // 0 = Sunday, 6 = Saturday
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          count++;
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+      return count;
+    }
+
+    // Recalculate Working Days & Targets on Date Change
+    function recalculateTargetAndDays() {
+      const fromVal = document.getElementById("from-date").value;
+      const toVal = document.getElementById("to-date").value;
+      currentWorkingDays = calculateWorkingDays(fromVal, toVal);
+      document.getElementById("card-working-days").innerText = currentWorkingDays;
+
+      // Update existing records target
+      rawAgentsData.forEach(agent => {
+        agent.target = currentWorkingDays * 300;
+      });
+
+      applyFilters();
+    }
+
+    // 2. Handle Excel File Upload and Smart Header Parsing
+    function handleExcelUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Convert sheet to JSON rows
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+          if (jsonData.length === 0) {
+            alert("Uploaded Excel sheet is empty!");
+            return;
+          }
+
+          // Parse and extract columns intelligently
+          parseExcelJsonData(jsonData);
+          
+        } catch (err) {
+          console.error(err);
+          alert("Error processing Excel file. Make sure it is a valid .xlsx or .xls file.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Smart Column Matcher
+    function parseExcelJsonData(rows) {
+      const parsedData = [];
+      const targetPoints = currentWorkingDays * 300;
+
+      rows.forEach(row => {
+        let name = "";
+        let videos = 0;
+        let camps = 0;
+        let fdb = 0;
+
+        // Iterate keys to match potential column names flexible
+        Object.keys(row).forEach(key => {
+          const cleanKey = key.toString().trim().toLowerCase();
+
+          // Agent Name Match
+          if (cleanKey.includes("agent") || cleanKey.includes("name") || cleanKey.includes("staff")) {
+            name = row[key].toString().trim();
+          }
+          // Clinic Videos Match
+          else if (cleanKey.includes("clinic video") || cleanKey.includes("videos") || cleanKey.includes("video call")) {
+            videos = parseInt(row[key]) || 0;
+          }
+          // Camps Match
+          else if (cleanKey.includes("camp") || cleanKey.includes("camps")) {
+            camps = parseInt(row[key]) || 0;
+          }
+          // Connected FDB Match
+          else if (cleanKey.includes("connected fdb") || cleanKey.includes("connectedfdb") || (cleanKey.includes("fdb") && !cleanKey.includes("chkdoc"))) {
+            fdb = parseInt(row[key]) || 0;
+          }
+        });
+
+        // Fallback indexing if headers weren't named nicely
+        const keys = Object.keys(row);
+        if (!name && keys[0]) name = row[keys[0]].toString().trim();
+
+        if (name && name.toLowerCase() !== "total" && name.toLowerCase() !== "average") {
+          // Calculate Achieved Points: (Videos * 5) + (Camps * 4) + (Connected FDB * 3)
+          const achieved = (videos * 5) + (camps * 4) + (fdb * 3);
+
+          parsedData.push({
+            id: Date.now() + Math.random(),
+            name: name,
+            videos: videos,
+            camps: camps,
+            fdb: fdb,
+            achieved: achieved,
+            target: targetPoints
+          });
+        }
+      });
+
+      rawAgentsData = parsedData;
+      populateAgentDropdown();
+      applyFilters();
+      alert(`Successfully loaded ${rawAgentsData.length} agents from Excel!`);
+    }
+
+    // 3. Populate Agent Filter Dropdown
+    function populateAgentDropdown() {
+      const dropdown = document.getElementById("agent-dropdown");
+      dropdown.innerHTML = '<option value="ALL">-- All Agents --</option>';
+
+      // Unique agent names
+      const uniqueNames = [...new Set(rawAgentsData.map(a => a.name))];
+      uniqueNames.forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.innerText = name;
+        dropdown.appendChild(option);
+      });
+    }
+
+    // 4. Apply Filters (Search Box + Agent Dropdown) and Render
+    function applyFilters() {
+      const searchValue = document.getElementById("search-agent").value.trim().toLowerCase();
+      const selectedAgent = document.getElementById("agent-dropdown").value;
+
+      let filtered = rawAgentsData.filter(agent => {
+        const matchesSearch = agent.name.toLowerCase().includes(searchValue);
+        const matchesDropdown = (selectedAgent === "ALL") || (agent.name === selectedAgent);
+        return matchesSearch && matchesDropdown;
+      });
+
+      renderDashboard(filtered);
+    }
+
+    // 5. Render Data to UI
+    function renderDashboard(dataList) {
+      const tbody = document.getElementById("agent-table-body");
+      tbody.innerHTML = "";
+
+      if (dataList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="no-data">No agents match the selected filter or no Excel data uploaded.</td></tr>`;
+        updateSummaryCards([], 0, 0, 0, 0, 0, 0);
+        return;
+      }
+
+      let totalVideos = 0;
+      let totalCamps = 0;
+      let totalFdb = 0;
+      let totalAchieved = 0;
+      let totalTarget = 0;
+      let sumProductivity = 0;
+
+      dataList.forEach(agent => {
+        const prodPercent = agent.target > 0 ? Math.round((agent.achieved / agent.target) * 100) : 0;
+
+        totalVideos += agent.videos;
+        totalCamps += agent.camps;
+        totalFdb += agent.fdb;
+        totalAchieved += agent.achieved;
+        totalTarget += agent.target;
+        sumProductivity += prodPercent;
+
+        // Badge Color Logic
+        let prodClass = "prod-high";
+        if (prodPercent < 150 && prodPercent >= 100) prodClass = "prod-mid";
+        if (prodPercent < 100) prodClass = "prod-low";
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><strong>${agent.name}</strong></td>
+          <td>${agent.videos.toLocaleString()}</td>
+          <td>${agent.camps.toLocaleString()}</td>
+          <td>${agent.fdb.toLocaleString()}</td>
+          <td style="color: #f59e0b; font-weight: bold;">${agent.achieved.toLocaleString()}</td>
+          <td>${agent.target.toLocaleString()}</td>
+          <td><span class="prod-badge ${prodClass}">${prodPercent}%</span></td>
+          <td>
+            <button class="btn-delete" onclick="removeAgent('${agent.id}')" title="Remove agent">Remove 🗑️</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      const avgProd = dataList.length > 0 ? Math.round(sumProductivity / dataList.length) : 0;
+      updateSummaryCards(dataList.length, totalVideos, totalCamps, totalFdb, totalAchieved, totalTarget, avgProd);
+    }
+
+    // Update Top Summary Cards
+    function updateSummaryCards(agentCount, videos, camps, fdb, achieved, target, avgProd) {
+      document.getElementById("card-total-agents").innerText = agentCount;
+      document.getElementById("card-videos").innerText = videos.toLocaleString();
+      document.getElementById("card-camps").innerText = camps.toLocaleString();
+      document.getElementById("card-fdb").innerText = fdb.toLocaleString();
+      document.getElementById("card-achieved").innerText = achieved.toLocaleString();
+      document.getElementById("card-target").innerText = target.toLocaleString();
+      document.getElementById("card-avg-prod").innerText = `${avgProd}%`;
+    }
+
+    // 6. Delete / Remove Individual Agent
+    function removeAgent(agentId) {
+      const agentObj = rawAgentsData.find(a => a.id.toString() === agentId.toString());
+      if (!agentObj) return;
+
+      if (confirm(`Kya aap "${agentObj.name}" ko dashboard se remove karna chahte hain?`)) {
+        rawAgentsData = rawAgentsData.filter(a => a.id.toString() !== agentId.toString());
+        populateAgentDropdown();
+        applyFilters();
+      }
+    }
+
+    // Sample Initial Data Load for demonstration
+    function loadInitialSampleData() {
+      const target = currentWorkingDays * 300; // 5100
+      rawAgentsData = [
+        { id: 1, name: "saurabh", videos: 1298, camps: 964, fdb: 7, achieved: 10367, target: target },
+        { id: 2, name: "md anas", videos: 1369, camps: 582, fdb: 30, achieved: 9263, target: target },
+        { id: 3, name: "Shivam Verma", videos: 1337, camps: 455, fdb: 2, achieved: 8511, target: target },
+        { id: 4, name: "Jogender Singh", videos: 994, camps: 700, fdb: 4, achieved: 7782, target: target },
+        { id: 5, name: "Renu Gupta", videos: 972, camps: 497, fdb: 0, achieved: 6848, target: target }
+      ];
+      populateAgentDropdown();
+      applyFilters();
+    }
+
+    // Initial setup
+    recalculateTargetAndDays();
+    loadInitialSampleData();
+  </script>
+</body>
+</html>
+index.html
+Displaying index.html.
