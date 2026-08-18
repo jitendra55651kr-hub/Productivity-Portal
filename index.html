@@ -23,6 +23,7 @@
         input[type="text"], input[type="number"], input[type="date"], select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
         .btn { width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
         .btn-add { background: #059669; }
+        .btn-sync { background: #0284c7; }
         .btn-danger { background: #dc2626; }
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; }
         .kpi-card { background: white; padding: 15px; border-radius: 10px; border: 1px solid var(--border); text-align: center; }
@@ -42,7 +43,7 @@
 <body>
 <div class="header">
     <h1>🚀 Agent Productivity Dashboard</h1>
-    <p>Exclude Sat/Sun Working Days | Includes Sat/Sun Work Output</p>
+    <p>Live Connected with Google Sheets</p>
 </div>
 <div class="container">
     <div>
@@ -68,10 +69,11 @@
         </div>
 
         <div class="card">
-            <h2>👥 Add Multiple Agents Data</h2>
-            <div id="agentInputsContainer">
-                <!-- Dynamic Agent Input Forms will appear here -->
-            </div>
+            <h2>🔄 Live Data Sync</h2>
+            <button class="btn btn-sync" id="syncBtn" onclick="fetchGoogleSheetData()">📊 Fetch Data from Google Sheet</button>
+            
+            <h2 style="margin-top:15px;">👥 Add Manual Agents</h2>
+            <div id="agentInputsContainer"></div>
             <button class="btn btn-add" onclick="createAgentInputRow()">➕ Add Another Agent Form</button>
             <button class="btn" onclick="calculateAllBatch()">⚡ Process & Submit All Agents</button>
             <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Current Table Data</button>
@@ -109,20 +111,66 @@
 </div>
 
 <script>
-let agentData = [
-    { name: "Saurav Pal", video: 1523, audio: 1104, fdb: 7, days: 34 },
-    { name: "MD Anas", video: 1530, audio: 616, fdb: 32, days: 34 },
-    { name: "Shivam Verma", video: 1607, audio: 467, fdb: 2, days: 34 },
-    { name: "Jogender Singh", video: 1146, audio: 750, fdb: 4, days: 34 },
-    { name: "Renu Gupta", video: 1145, audio: 556, fdb: 0, days: 34 }
-];
+// Aapki Correct Google Sheet ID (Specific tab: gid=531272320)
+const SHEET_ID = "17mZJcOCzSVJ_w7m_RGI5lJflkOHPRMD-x99fOJ0KkfQ";
+const SHEET_GID = "531272320";
+
+let agentData = [];
 let chartInstance = null;
 let agentInputCount = 0;
 
 window.onload = function() {
-    createAgentInputRow(); // Create initial form
+    createAgentInputRow();
     processAndRender();
 };
+
+function fetchGoogleSheetData() {
+    const btn = document.getElementById('syncBtn');
+    btn.innerText = "⏳ Fetching Data...";
+    
+    // Exact GID Tab CSV URL
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
+
+    fetch(csvUrl)
+        .then(response => response.text())
+        .then(csvText => {
+            const rows = csvText.split('\n').map(row => row.split(',').map(cell => cell.replace(/^"|"$/g, '').trim()));
+            let days = getCalculatedDays();
+            
+            agentData = [];
+            // Row 0 = Header, Row 1 onwards = Data
+            for (let i = 1; i < rows.length; i++) {
+                if (rows[i][0] && rows[i][0] !== "") {
+                    agentData.push({
+                        name: rows[i][0],
+                        video: parseInt(rows[i][1]) || 0,
+                        audio: parseInt(rows[i][2]) || 0,
+                        fdb: parseInt(rows[i][3]) || 0,
+                        days: days
+                    });
+                }
+            }
+            
+            processAndRender();
+            btn.innerText = "✅ Data Synced Successfully!";
+            setTimeout(() => { btn.innerText = "📊 Fetch Data from Google Sheet"; }, 2000);
+        })
+        .catch(err => {
+            alert("Error loading Google Sheet data: " + err);
+            btn.innerText = "📊 Fetch Data from Google Sheet";
+        });
+}
+
+function getCalculatedDays() {
+    let days = 21;
+    if(document.getElementById('dayMode').value === 'manual') {
+        days = parseInt(document.getElementById('workDays').value) || 21;
+    } else {
+        const s = document.getElementById('startDate').value, e = document.getElementById('endDate').value;
+        if(s && e) days = getBusinessDays(s, e);
+    }
+    return days;
+}
 
 function toggleDayMode() {
     const m = document.getElementById('dayMode').value;
@@ -163,14 +211,7 @@ function removeAgentInputRow(id) {
 }
 
 function calculateAllBatch() {
-    let days = 21;
-    if(document.getElementById('dayMode').value === 'manual') {
-        days = parseInt(document.getElementById('workDays').value) || 21;
-    } else {
-        const s = document.getElementById('startDate').value, e = document.getElementById('endDate').value;
-        if(s && e) days = getBusinessDays(s, e);
-    }
-
+    let days = getCalculatedDays();
     const blocks = document.querySelectorAll('.agent-block');
     blocks.forEach(b => {
         const name = b.querySelector('.in-name').value.trim();
@@ -182,11 +223,9 @@ function calculateAllBatch() {
         }
     });
 
-    // Clear input fields after adding
     document.getElementById('agentInputsContainer').innerHTML = '';
     agentInputCount = 0;
     createAgentInputRow();
-    
     processAndRender();
 }
 
@@ -209,11 +248,7 @@ function handleFileUpload(e) {
         const data = new Uint8Array(evt.target.result);
         const wb = XLSX.read(data, {type: 'array'});
         const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-        let days = 21;
-        if(document.getElementById('dayMode').value === 'daterange') {
-            const s = document.getElementById('startDate').value, e = document.getElementById('endDate').value;
-            if(s && e) days = getBusinessDays(s, e);
-        }
+        let days = getCalculatedDays();
         agentData = rows.map(r => ({
             name: r['Agent'] || r['Name'] || 'Agent',
             video: parseInt(r['Clinic Video Ca'] || r['Video'] || 0),
@@ -257,45 +292,7 @@ function processAndRender() {
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
-// Aapki Google Sheet ID (Upar Step 1 se mili ID yahan paste karein)
-const SHEET_ID = "YOUR_GOOGLE_SHEET_ID_HERE"; 
-
-function fetchGoogleSheetData(17mZJcOCzSVJ_w7m_RGI5lJflkOHPRMD-x99fOJ0KkfQ/edit?gid=531272320#gid=531272320) {
-    const btn = document.getElementById('syncBtn');
-    btn.innerText = "⏳ Fetching Data...";
-    
-    // Google Sheet CSV URL
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
-
-    fetch(csvUrl)
-        .then(response => response.text())
-        .then(csvText => {
-            // Parse CSV Data
-            const rows = csvText.split('\n').map(row => row.split(',').map(cell => cell.replace(/^"|"$/g, '').trim()));
-            let days = getCalculatedDays();
-            
-            agentData = [];
-            // Assuming Row 0 is Header: Name, Video, Audio, FDB
-            for (let i = 1; i < rows.length; i++) {
-                if (rows[i][0] && rows[i][0] !== "") {
-                    agentData.push({
-                        name: rows[i][0],
-                        video: parseInt(rows[i][1]) || 0,
-                        audio: parseInt(rows[i][2]) || 0,
-                        fdb: parseInt(rows[i][3]) || 0,
-                        days: days
-                    });
-                }
-            }
-            
-            processAndRender();
-            btn.innerText = "✅ Data Synced Successfully!";
-            setTimeout(() => { btn.innerText = "📊 Fetch Data from Google Sheet"; }, 2000);
-        })
-        .catch(err => {
-            alert("Error loading Google Sheet data: " + err);
-            btn.innerText = "📊 Fetch Data from Google Sheet";
-        });
 }
+</script>
 </body>
 </html>
