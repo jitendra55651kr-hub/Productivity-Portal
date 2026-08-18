@@ -25,7 +25,7 @@
         * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; margin: 0; padding: 0; }
         body { background-color: var(--bg-dark); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; }
 
-        /* Modern Sidebar */
+        /* Sidebar Navigation */
         .sidebar { width: 270px; background-color: var(--sidebar-bg); border-right: 1px solid var(--card-border); padding: 24px 18px; display: flex; flex-direction: column; gap: 10px; position: fixed; height: 100vh; z-index: 100; }
         .brand { font-size: 16px; font-weight: 800; color: #fff; padding: 10px 12px; margin-bottom: 20px; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px; }
         .brand-icon { width: 28px; height: 28px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
@@ -33,12 +33,12 @@
         .nav-btn:hover { background: rgba(255, 255, 255, 0.03); color: var(--text-main); }
         .nav-btn.active { background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(99, 102, 241, 0.15)); border-color: rgba(56, 189, 248, 0.3); color: var(--accent-cyan); box-shadow: 0 4px 20px var(--glass-glow); }
 
-        /* Main Area */
+        /* Main Workspace */
         .main-content { margin-left: 270px; flex: 1; padding: 28px; max-width: calc(100% - 270px); }
         .page-header { background: linear-gradient(135deg, rgba(18, 26, 47, 0.8) 0%, rgba(30, 41, 71, 0.6) 100%); backdrop-filter: blur(12px); padding: 20px 24px; border-radius: 16px; border: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .page-title { font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; display: flex; align-items: center; gap: 10px; }
 
-        /* Action Control Bar */
+        /* Control Bar */
         .filter-bar { display: flex; flex-wrap: wrap; gap: 16px; background: var(--card-bg); backdrop-filter: blur(12px); padding: 18px; border-radius: 16px; border: 1px solid var(--card-border); margin-bottom: 24px; align-items: center; }
         .filter-group { display: flex; flex-direction: column; gap: 6px; }
         .filter-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -57,19 +57,19 @@
         .scorecard-title { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
         .scorecard-value { font-size: 26px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
 
-        /* Layout Grids & Charts */
+        /* Grids & Charts */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
         .chart-card { background: var(--card-bg); backdrop-filter: blur(12px); padding: 22px; border-radius: 16px; border: 1px solid var(--card-border); height: 340px; position: relative; }
         .chart-title { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* Tables */
+        /* Modern Tables */
         .table-card { background: var(--card-bg); backdrop-filter: blur(12px); border-radius: 16px; border: 1px solid var(--card-border); overflow: hidden; margin-bottom: 24px; }
         table { width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left; }
         th { background: rgba(3, 6, 17, 0.8); color: var(--text-muted); padding: 14px 18px; border-bottom: 1px solid var(--card-border); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
         td { padding: 14px 18px; border-bottom: 1px solid var(--card-border); color: var(--text-main); font-weight: 500; }
         tr:hover { background-color: rgba(255, 255, 255, 0.02); }
 
-        /* Modal Overlay for Sheet Link */
+        /* Modal Overlay */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(3, 6, 17, 0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; }
         .modal-card { background: #0f172a; border: 1px solid var(--card-border); border-radius: 20px; width: 90%; max-width: 520px; padding: 28px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .modal-title { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 8px; }
@@ -84,7 +84,7 @@
 </head>
 <body>
 
-    <!-- Sidebar Navigation -->
+    <!-- Sidebar Menu -->
     <div class="sidebar">
         <div class="brand">
             <div class="brand-icon">⚡</div>
@@ -258,6 +258,15 @@
             fetchSheetData();
         }
 
+        // Helper: Converts any cell value to a safe Number (Fixes NaN)
+        function cleanNumber(val) {
+            if (val === null || val === undefined) return 0;
+            if (typeof val === 'number') return isNaN(val) ? 0 : val;
+            let str = String(val).replace(/,/g, '').replace(/[^0-9.-]/g, '').trim();
+            let num = parseFloat(str);
+            return isNaN(num) ? 0 : num;
+        }
+
         function calculateWorkingDaysExcludingWeekends(start, end) {
             let count = 0;
             let cur = new Date(start);
@@ -299,34 +308,58 @@
         }
 
         function parseRows(rows) {
-            let agents = [];
-            let hesms = [];
+            let agentMap = {};
+            let hesmMap = {};
 
-            rows.forEach((r, idx) => {
+            rows.forEach((r) => {
                 if (!r.c) return;
+                
+                // Read Agent Rows & Deduplicate
                 let aName = r.c[0] ? String(r.c[0].v || '').trim() : '';
-                if (aName && !aName.toLowerCase().includes('agent') && !aName.toLowerCase().includes('total') && idx < 12) {
-                    let video = Number(r.c[1] ? r.c[1].v : 0);
-                    let camp = Number(r.c[2] ? r.c[2].v : 0);
-                    let fdb = Number(r.c[3] ? r.c[3].v : 0);
-                    let tat = Number(r.c[5] ? r.c[5].v : 22);
-                    agents.push({ agent: aName, video, camp, fdb, done: (video + camp), tat });
+                if (aName && !aName.toLowerCase().includes('agent') && !aName.toLowerCase().includes('total') && !aName.toLowerCase().includes('grand')) {
+                    let key = aName.toLowerCase();
+                    let video = cleanNumber(r.c[1] ? r.c[1].v : 0);
+                    let camp = cleanNumber(r.c[2] ? r.c[2].v : 0);
+                    let fdb = cleanNumber(r.c[3] ? r.c[3].v : 0);
+                    let tat = cleanNumber(r.c[5] ? r.c[5].v : 20);
+
+                    if (!agentMap[key]) {
+                        // Title Case Formatting
+                        let formattedName = aName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                        agentMap[key] = { agent: formattedName, video: 0, camp: 0, fdb: 0, done: 0, tatCount: 0, totalTat: 0 };
+                    }
+
+                    agentMap[key].video += video;
+                    agentMap[key].camp += camp;
+                    agentMap[key].fdb += fdb;
+                    agentMap[key].done += (video + camp);
+                    if (tat > 0) {
+                        agentMap[key].totalTat += tat;
+                        agentMap[key].tatCount += 1;
+                    }
                 }
 
+                // Read Region/HESM Rows & Deduplicate
                 let reg = r.c[8] ? String(r.c[8].v || '').trim() : '';
                 let hesm = r.c[9] ? String(r.c[9].v || '').trim() : '';
-                if (reg && hesm) {
-                    hesms.push({
-                        region: reg, hesm: hesm,
-                        done: Number(r.c[10] ? r.c[10].v : 0),
-                        video: Number(r.c[11] ? r.c[11].v : 0),
-                        camp: Number(r.c[12] ? r.c[12].v : 0)
-                    });
+                if (reg && hesm && !reg.toLowerCase().includes('region')) {
+                    let hKey = `${reg.toLowerCase()}_${hesm.toLowerCase()}`;
+                    if (!hesmMap[hKey]) {
+                        hesmMap[hKey] = { region: reg, hesm: hesm, done: 0, video: 0, camp: 0 };
+                    }
+                    hesmMap[hKey].done += cleanNumber(r.c[10] ? r.c[10].v : 0);
+                    hesmMap[hKey].video += cleanNumber(r.c[11] ? r.c[11].v : 0);
+                    hesmMap[hKey].camp += cleanNumber(r.c[12] ? r.c[12].v : 0);
                 }
             });
 
-            if(agents.length) liveAgentData = agents;
-            if(hesms.length) liveHesmData = hesms;
+            // Convert map back to list with calculated average TAT
+            liveAgentData = Object.values(agentMap).map(a => ({
+                ...a,
+                tat: a.tatCount > 0 ? parseFloat((a.totalTat / a.tatCount).toFixed(1)) : 20
+            }));
+
+            liveHesmData = Object.values(hesmMap);
         }
 
         function populateAgentDropdown() {
@@ -376,10 +409,10 @@
         }
 
         function renderPerformance(agents, workingDays) {
-            let totalVideo = agents.reduce((s, a) => s + a.video, 0);
-            let totalCamp = agents.reduce((s, a) => s + a.camp, 0);
-            let totalFdb = agents.reduce((s, a) => s + a.fdb, 0);
-            let totalDone = agents.reduce((s, a) => s + a.done, 0);
+            let totalVideo = agents.reduce((s, a) => s + cleanNumber(a.video), 0);
+            let totalCamp = agents.reduce((s, a) => s + cleanNumber(a.camp), 0);
+            let totalFdb = agents.reduce((s, a) => s + cleanNumber(a.fdb), 0);
+            let totalDone = agents.reduce((s, a) => s + cleanNumber(a.done), 0);
 
             document.getElementById('perfVideo').innerText = totalVideo.toLocaleString();
             document.getElementById('perfCamp').innerText = totalCamp.toLocaleString();
@@ -387,7 +420,8 @@
             document.getElementById('perfTotal').innerText = totalDone.toLocaleString();
 
             let targetPerDay = 80;
-            let avgProdPercent = Math.round((totalDone / Math.max(1, workingDays * targetPerDay * agents.length)) * 100);
+            let totalTarget = Math.max(1, workingDays * targetPerDay * (agents.length || 1));
+            let avgProdPercent = Math.round((totalDone / totalTarget) * 100);
             document.getElementById('perfAvgProd').innerText = `${avgProdPercent}%`;
 
             const labels = agents.map(a => a.agent);
