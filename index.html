@@ -261,27 +261,91 @@
                 </div>
             </section>
 
-            <!-- SECTION 4: GOOGLE SHEETS INTEGRATION -->
-            <section id="google-sheets-tab" class="tab-content">
-                <div class="card">
-                    <h3><i class="fa-brands fa-google-drive"></i> Google Sheets Data Import</h3>
-                    <p class="subtitle">Paste a published Google Sheet CSV URL or API endpoint containing raw logs.</p>
-                    
-                    <div class="form-group">
-                        <label>Google Sheet Published CSV / Web App URL</label>
-                        <input type="url" id="gsheets-url" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
-                    </div>
-                    <div class="action-bar">
-                        <button onclick="importGoogleSheets()" class="btn btn-primary"><i class="fa-solid fa-cloud-download"></i> Fetch & Sync Data</button>
-                    </div>
-                    
-                    <div class="info-note" style="margin-top: 20px;">
-                        <h4><i class="fa-solid fa-key"></i> Setup Instructions:</h4>
-                        <ol>
-                            <li>In Google Sheets, go to <strong>File &gt; Share &gt; Publish to web</strong>.</li>
-                            <li>Select <strong>Comma-separated values (.csv)</strong> and click <strong>Publish</strong>.</li>
-                            <li>Paste the generated link above to pull data seamlessly.</li>
-                        </ol>
+            /**
+ * Direct Google Sheet Data Fetcher using Sheet ID & GID
+ */
+async function fetchFromGoogleSheet() {
+    // Aapki exact Google Sheet ID aur GID (performance sheet)
+    const sheetId = "17mZJcOCzSVJ_w7m_RGI5lJflkOHPRMD-x99fOJ0KkfQ";
+    const gid = "531272320"; // performance sheet tab GID
+
+    const fetchBtn = document.getElementById("fetch-btn") || document.querySelector("button[onclick*='importGoogleSheets']");
+    if (fetchBtn) fetchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching Data...';
+
+    // Direct CSV Endpoint using GID
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+
+    try {
+        const response = await fetch(csvUrl);
+        if (!response.ok) {
+            throw new Error("Sheet access failed. Make sure Share setting is set to 'Anyone with the link can view'.");
+        }
+        
+        const csvText = await response.text();
+        
+        // Parse CSV Data using PapaParse
+        Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                if (results.data && results.data.length > 0) {
+                    processGoogleSheetRows(results.data);
+                    if (fetchBtn) {
+                        fetchBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Data Fetched!';
+                        setTimeout(() => { fetchBtn.innerHTML = '<i class="fa-solid fa-cloud-download"></i> Fetch Data'; }, 3000);
+                    }
+                } else {
+                    alert("Sheet me koi data nahi mila.");
+                    if (fetchBtn) fetchBtn.innerHTML = '<i class="fa-solid fa-cloud-download"></i> Fetch Data';
+                }
+            },
+            error: (err) => {
+                alert("CSV Parsing Error: " + err.message);
+                if (fetchBtn) fetchBtn.innerHTML = '<i class="fa-solid fa-cloud-download"></i> Fetch Data';
+            }
+        });
+    } catch (error) {
+        alert("Fetch Error: " + error.message + "\n\nTip: Google Sheet par Share button par click karke 'Anyone with the link' select karein.");
+        if (fetchBtn) fetchBtn.innerHTML = '<i class="fa-solid fa-cloud-download"></i> Fetch Data';
+    }
+}
+
+/**
+ * Maps rows and auto-calculates productivity metrics
+ */
+function processGoogleSheetRows(rows) {
+    let importedLogs = [];
+
+    rows.forEach(row => {
+        // Read Agent Name
+        const agent = row["Agent"] || row["Agent Name"] || row["agent"] || "";
+        
+        // Read Date (If date column exists, else takes current date)
+        const date = row["Date"] || row["date"] || new Date().toISOString().split('T')[0];
+        
+        // Auto-detect columns based on your sheet headers
+        const video = parseInt(row["Clinic Video Call"] || row["Clinic Video"] || row["Video"] || row["Done Consults"] || 0) || 0;
+        const camp = parseInt(row["CAMP"] || row["Camp Cases"] || row["Audio"] || row["ChkDoc Calls"] || 0) || 0;
+        const fdb = parseInt(row["Connected Fdb"] || row["Connected FDB"] || row["Fdb"] || row["FDB"] || 0) || 0;
+
+        if (agent.trim() !== "") {
+            importedLogs.push({
+                id: Date.now() + Math.random(),
+                agent: agent.trim(),
+                date: formatDateStandard(date),
+                video: video,
+                camp: camp,
+                fdb: fdb
+            });
+        }
+    });
+
+    if (importedLogs.length > 0) {
+        rawLogs = importedLogs;
+        saveToLocalStorage();
+        renderDashboard(); // Re-calculates and displays productivity table, KPIs, and applies date filters
+    }
+}                        </ol>
                     </div>
                 </div>
             </section>
