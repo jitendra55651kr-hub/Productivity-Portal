@@ -47,10 +47,20 @@
         .search-box input { background: transparent; border: none; color: #fff; outline: none; width: 100%; }
         
         .filter-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .date-input-group { display: flex; align-items: center; gap: 8px; background: #0f172a; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); }
-        .date-input-group label { font-size: 0.8rem; color: var(--text-sub); font-weight: 500; }
+        .date-input-group { display: flex; align-items: center; gap: 8px; background: #0f172a; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer; }
+        .date-input-group label { font-size: 0.8rem; color: var(--text-sub); font-weight: 500; cursor: pointer; }
         
-        input[type="date"], input[type="text"], input[type="number"] { background: transparent; border: none; color: #fff; outline: none; font-size: 0.85rem; }
+        input[type="date"] { 
+            background: transparent; 
+            border: none; 
+            color: #fff; 
+            outline: none; 
+            font-size: 0.85rem; 
+            cursor: pointer;
+            color-scheme: dark; /* Dark theme calendar icon */
+        }
+
+        input[type="text"], input[type="number"] { background: transparent; border: none; color: #fff; outline: none; font-size: 0.85rem; }
 
         /* KPI Grid */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
@@ -121,7 +131,7 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
-        <!-- Top Bar with Direct Date Range Filters -->
+        <!-- Top Bar with Interactive Date Range Filters -->
         <header class="top-bar">
             <div class="search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
@@ -129,12 +139,12 @@
             </div>
             
             <div class="filter-controls">
-                <div class="date-input-group">
+                <div class="date-input-group" onclick="openPicker('start-date')">
                     <label>From:</label>
                     <input type="date" id="start-date" value="2026-05-21">
                 </div>
 
-                <div class="date-input-group">
+                <div class="date-input-group" onclick="openPicker('end-date')">
                     <label>To:</label>
                     <input type="date" id="end-date" value="2026-06-15">
                 </div>
@@ -251,6 +261,16 @@
 
     <script>
         let globalRawData = [];
+
+        // Helper function to force open calendar pop-up on click
+        function openPicker(inputId) {
+            const inputEl = document.getElementById(inputId);
+            if (inputEl && typeof inputEl.showPicker === 'function') {
+                inputEl.showPicker();
+            } else {
+                inputEl.focus();
+            }
+        }
 
         // Fixed Local Timezone Working Days Calculation (Excluding Saturday & Sunday)
         function calculateWorkingDays(startDateStr, endDateStr) {
