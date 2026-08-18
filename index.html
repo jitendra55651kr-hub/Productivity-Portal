@@ -252,17 +252,20 @@
     <script>
         let globalRawData = [];
 
-        // Function to calculate exact working days between two dates excluding Saturday & Sunday
+        // Fixed Local Timezone Working Days Calculation (Excluding Saturday & Sunday)
         function calculateWorkingDays(startDateStr, endDateStr) {
             if(!startDateStr || !endDateStr) return 0;
             
-            let start = new Date(startDateStr);
-            let end = new Date(endDateStr);
+            let [sYear, sMonth, sDay] = startDateStr.split('-');
+            let [eYear, eMonth, eDay] = endDateStr.split('-');
+            
+            let start = new Date(sYear, sMonth - 1, sDay);
+            let end = new Date(eYear, eMonth - 1, eDay);
             
             if (start > end) return 0;
 
             let count = 0;
-            let curDate = new Date(start.getTime());
+            let curDate = new Date(start);
 
             while (curDate <= end) {
                 let dayOfWeek = curDate.getDay();
