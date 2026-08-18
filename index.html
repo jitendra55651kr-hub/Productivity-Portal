@@ -75,8 +75,8 @@
                 <input type="text" id="sheetIdInput" value="17mZJcOCzSVJ_w7m_RGI51Jf1kOHPRMD-x99fOJ0KkfQ" placeholder="Paste Sheet ID here...">
             </div>
             <div class="form-group">
-                <label>Sheet Page/Tab Name (e.g., Sheet1)</label>
-                <input type="text" id="sheetNameInput" placeholder="Sheet1 ya Page Ka Naam">
+                <label>Sheet Tab Name (e.g., Performance Data)</label>
+                <input type="text" id="sheetNameInput" value="Performance Data" placeholder="Tab Name">
             </div>
             <button class="btn btn-sync" id="syncBtn" onclick="fetchGoogleSheetData()">📊 Fetch Selected Tab Data</button>
 
@@ -125,7 +125,6 @@ let agentInputCount = 0;
 
 window.onload = function() {
     createAgentInputRow();
-    processAndRender();
 };
 
 function fetchGoogleSheetData() {
@@ -134,7 +133,7 @@ function fetchGoogleSheetData() {
     const btn = document.getElementById('syncBtn');
 
     if (!sheetId || !sheetName) {
-        alert("Kripya Google Sheet ID aur Sheet Page Name dono dalein!");
+        alert("Kripya Google Sheet ID aur Tab Name dono dalein!");
         return;
     }
 
@@ -145,28 +144,42 @@ function fetchGoogleSheetData() {
     fetch(csvUrl)
         .then(response => response.text())
         .then(csvText => {
+            if (csvText.includes("<!DOCTYPE html>") || csvText.includes("<html") || csvText.includes("function(")) {
+                alert("Sheet Response Valid CSV nahi hai. Kripya Sheet mein 'Publish to Web' as CSV karein!");
+                btn.innerText = "📊 Fetch Selected Tab Data";
+                return;
+            }
+
             const rows = csvText.split('\n').map(row => row.split(',').map(cell => cell.replace(/^"|"$/g, '').trim()));
             let days = getCalculatedDays();
-            
-            agentData = [];
+            let groupedAgents = {};
+
             for (let i = 1; i < rows.length; i++) {
-                if (rows[i][0] && rows[i][0] !== "") {
-                    agentData.push({
-                        name: rows[i][0],
-                        video: parseInt(rows[i][1]) || 0,
-                        audio: parseInt(rows[i][2]) || 0,
-                        fdb: parseInt(rows[i][3]) || 0,
-                        days: days
-                    });
+                if (!rows[i] || rows[i].length < 3) continue;
+                let name = rows[i][2]; // Column C (Agent Name)
+
+                // Pure Human Names Filter Only
+                if (name && name !== "Agent" && !name.includes("function") && !name.includes("(") && !name.includes("=") && name.length < 30) {
+                    let video = parseInt(rows[i][3]) || 0; // Col D
+                    let audio = parseInt(rows[i][4]) || 0; // Col E
+                    let fdb = parseInt(rows[i][5]) || 0;   // Col F
+
+                    if(!groupedAgents[name]) {
+                        groupedAgents[name] = { name: name, video: 0, audio: 0, fdb: 0, days: days };
+                    }
+                    groupedAgents[name].video += video;
+                    groupedAgents[name].audio += audio;
+                    groupedAgents[name].fdb += fdb;
                 }
             }
             
+            agentData = Object.values(groupedAgents);
             processAndRender();
             btn.innerText = "✅ Data Synced!";
             setTimeout(() => { btn.innerText = "📊 Fetch Selected Tab Data"; }, 2000);
         })
         .catch(err => {
-            alert("Error loading Google Sheet tab. Check ID or Tab Name!");
+            alert("Error fetching sheet data!");
             btn.innerText = "📊 Fetch Selected Tab Data";
         });
 }
@@ -245,10 +258,8 @@ function deleteAgent(index) {
 }
 
 function clearAllData() {
-    if(confirm("Kiya aap poora table data clear karna chahte hain?")) {
-        agentData = [];
-        processAndRender();
-    }
+    agentData = [];
+    processAndRender();
 }
 
 function handleFileUpload(e) {
@@ -272,7 +283,9 @@ function handleFileUpload(e) {
 }
 
 function processAndRender() {
-    const computed = agentData.map(a => {
+    const validData = agentData.filter(a => a.name && !a.name.includes("function") && !a.name.includes("(") && !a.name.includes("="));
+
+    const computed = validData.map(a => {
         const earned = (a.video * 5) + (a.audio * 4) + (a.fdb * 3);
         const target = a.days * 300;
         const prod = target > 0 ? ((earned / target) * 100).toFixed(2) : 0;
