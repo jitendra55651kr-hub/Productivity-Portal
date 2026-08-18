@@ -18,13 +18,15 @@
         .agent-block { background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 12px; position: relative; }
         .remove-block-btn { position: absolute; top: 5px; right: 8px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; line-height: 20px; text-align: center; }
         .form-group { margin-bottom: 12px; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 4px; color: #475569; }
         input[type="text"], input[type="number"], input[type="date"], select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
         .btn { width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
         .btn-add { background: #059669; }
         .btn-sync { background: #0284c7; }
         .btn-danger { background: #dc2626; }
+        .info-box { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 10px; border-radius: 6px; font-size: 12px; margin-bottom: 12px; text-align: center; font-weight: 600; }
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; }
         .kpi-card { background: white; padding: 15px; border-radius: 10px; border: 1px solid var(--border); text-align: center; }
         .kpi-val { font-size: 20px; font-weight: bold; color: var(--primary); }
@@ -41,33 +43,37 @@
     </style>
 </head>
 <body>
+
 <div class="header">
     <h1>🚀 Agent Productivity Dashboard</h1>
-    <p>Live Connected with Multi-Tab Google Sheets</p>
+    <p>Auto Working Days Calculation (300 Pts / Day Excl. Sat/Sun)</p>
 </div>
+
 <div class="container">
     <div>
+        <!-- Date & Target Configuration -->
         <div class="card">
-            <h2>⚙️ Working Days Configuration</h2>
-            <div class="form-group">
-                <label>Working Days Mode</label>
-                <select id="dayMode" onchange="toggleDayMode()">
-                    <option value="daterange">Date Range (Auto Exclude Sat/Sun)</option>
-                    <option value="manual">Manual Working Days Entry</option>
-                </select>
-            </div>
-            <div id="manualDaysBox" class="form-group" style="display:none;">
-                <label>Working Days Count (Mon-Fri)</label>
-                <input type="number" id="workDays" value="21">
-            </div>
-            <div id="dateRangeBox" class="form-group">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                    <div><label>Start Date</label><input type="date" id="startDate" value="2026-07-01"></div>
-                    <div><label>End Date</label><input type="date" id="endDate" value="2026-08-17"></div>
+            <h2>📅 Date Range & Daily Target</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="date" id="startDate" onchange="updateTargetCalculation()">
                 </div>
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input type="date" id="endDate" onchange="updateTargetCalculation()">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Daily Target Points (Per Working Day)</label>
+                <input type="number" id="dailyTarget" value="300" onchange="updateTargetCalculation()">
+            </div>
+            <div class="info-box" id="targetSummary">
+                Working Days: 0 | Total Target: 0 Pts
             </div>
         </div>
 
+        <!-- Sheet Sync & Manual Input -->
         <div class="card">
             <h2>🔗 Connect Google Sheet</h2>
             <div class="form-group">
@@ -75,16 +81,16 @@
                 <input type="text" id="sheetIdInput" value="17mZJcOCzSVJ_w7m_RGI51Jf1kOHPRMD-x99fOJ0KkfQ" placeholder="Paste Sheet ID here...">
             </div>
             <div class="form-group">
-                <label>Sheet Tab Name (e.g., Performance Data)</label>
-                <input type="text" id="sheetNameInput" value="Performance Data" placeholder="Tab Name">
+                <label>Sheet Tab Name</label>
+                <input type="text" id="sheetNameInput" placeholder="e.g. Sheet1">
             </div>
             <button class="btn btn-sync" id="syncBtn" onclick="fetchGoogleSheetData()">📊 Fetch Selected Tab Data</button>
 
             <h2 style="margin-top:20px;">👥 Add Manual Agents</h2>
             <div id="agentInputsContainer"></div>
-            <button class="btn btn-add" onclick="createAgentInputRow()">➕ Add Another Agent Form</button>
+            <button class="btn btn-add" onclick="createAgentInputRow()">➕ Add Agent Form</button>
             <button class="btn" onclick="calculateAllBatch()">⚡ Process & Submit All Agents</button>
-            <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Current Table Data</button>
+            <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear Table Data</button>
             
             <hr style="margin:15px 0;">
             <div class="form-group">
@@ -123,9 +129,53 @@ let agentData = [];
 let chartInstance = null;
 let agentInputCount = 0;
 
+// Date Auto Set (Default 21 June to 17 July for testing)
 window.onload = function() {
+    const today = new Date();
+    document.getElementById('startDate').value = "2026-06-21";
+    document.getElementById('endDate').value = "2026-07-17";
+    
+    updateTargetCalculation();
     createAgentInputRow();
+    processAndRender();
 };
+
+// Calculate Working Days excluding Saturdays and Sundays
+function getWorkingDays(startDate, endDate) {
+    if (!startDate || !endDate) return 0;
+    let start = new Date(startDate);
+    let end = new Date(endDate);
+    if (start > end) return 0;
+
+    let count = 0;
+    let cur = new Date(start.getTime());
+    while (cur <= end) {
+        const dayOfWeek = cur.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0 = Sunday, 6 = Saturday
+            count++;
+        }
+        cur.setDate(cur.getDate() + 1);
+    }
+    return count;
+}
+
+function calculateComputedTarget() {
+    const start = document.getElementById('startDate').value;
+    const end = document.getElementById('endDate').value;
+    const dailyPts = parseInt(document.getElementById('dailyTarget').value) || 300;
+    
+    const workingDays = getWorkingDays(start, end);
+    return {
+        workingDays: workingDays,
+        totalTarget: workingDays * dailyPts
+    };
+}
+
+function updateTargetCalculation() {
+    const calc = calculateComputedTarget();
+    document.getElementById('targetSummary').innerText = `Working Days: ${calc.workingDays} | Total Target: ${calc.totalTarget} Pts`;
+    processAndRender();
+}
 
 function fetchGoogleSheetData() {
     const sheetId = document.getElementById('sheetIdInput').value.trim();
@@ -138,76 +188,54 @@ function fetchGoogleSheetData() {
     }
 
     btn.innerText = "⏳ Fetching Data...";
-
     const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
 
     fetch(csvUrl)
         .then(response => response.text())
         .then(csvText => {
-            if (csvText.includes("<!DOCTYPE html>") || csvText.includes("<html") || csvText.includes("function(")) {
-                alert("Sheet Response Valid CSV nahi hai. Kripya Sheet mein 'Publish to Web' as CSV karein!");
-                btn.innerText = "📊 Fetch Selected Tab Data";
+            const rows = csvText.split('\n').map(row => row.split(',').map(cell => cell.replace(/^"|"$/g, '').trim()));
+            
+            if(rows.length < 2) {
+                alert("Sheet me data nahi mila!");
                 return;
             }
 
-            const rows = csvText.split('\n').map(row => row.split(',').map(cell => cell.replace(/^"|"$/g, '').trim()));
-            let days = getCalculatedDays();
-            let groupedAgents = {};
+            const header = rows[0].map(h => h.toLowerCase());
+            const agentIdx = header.findIndex(h => h.includes('agent') || h.includes('name'));
+            const videoIdx = header.findIndex(h => h.includes('video'));
+            const audioIdx = header.findIndex(h => h.includes('camp') || h.includes('audio'));
+            const fdbIdx = header.findIndex(h => h.includes('fdb'));
+            const achievedIdx = header.findIndex(h => h.includes('achieved'));
+
+            agentData = [];
 
             for (let i = 1; i < rows.length; i++) {
-                if (!rows[i] || rows[i].length < 3) continue;
-                let name = rows[i][2]; // Column C (Agent Name)
+                const row = rows[i];
+                if (row[agentIdx] && row[agentIdx] !== "" && !row[agentIdx].toLowerCase().includes('average')) {
+                    const video = parseInt(row[videoIdx]) || 0;
+                    const audio = parseInt(row[audioIdx]) || 0;
+                    const fdb = parseInt(row[fdbIdx]) || 0;
+                    
+                    let earned = achievedIdx !== -1 ? (parseInt(row[achievedIdx].replace(/,/g, '')) || 0) : ((video * 5) + (audio * 4) + (fdb * 3));
 
-                // Pure Human Names Filter Only
-                if (name && name !== "Agent" && !name.includes("function") && !name.includes("(") && !name.includes("=") && name.length < 30) {
-                    let video = parseInt(rows[i][3]) || 0; // Col D
-                    let audio = parseInt(rows[i][4]) || 0; // Col E
-                    let fdb = parseInt(rows[i][5]) || 0;   // Col F
-
-                    if(!groupedAgents[name]) {
-                        groupedAgents[name] = { name: name, video: 0, audio: 0, fdb: 0, days: days };
-                    }
-                    groupedAgents[name].video += video;
-                    groupedAgents[name].audio += audio;
-                    groupedAgents[name].fdb += fdb;
+                    agentData.push({
+                        name: row[agentIdx],
+                        video: video,
+                        audio: audio,
+                        fdb: fdb,
+                        earned: earned
+                    });
                 }
             }
             
-            agentData = Object.values(groupedAgents);
             processAndRender();
             btn.innerText = "✅ Data Synced!";
             setTimeout(() => { btn.innerText = "📊 Fetch Selected Tab Data"; }, 2000);
         })
         .catch(err => {
-            alert("Error fetching sheet data!");
+            alert("Error loading Sheet! Check permissions or Tab Name.");
             btn.innerText = "📊 Fetch Selected Tab Data";
         });
-}
-
-function getCalculatedDays() {
-    let days = 21;
-    if(document.getElementById('dayMode').value === 'manual') {
-        days = parseInt(document.getElementById('workDays').value) || 21;
-    } else {
-        const s = document.getElementById('startDate').value, e = document.getElementById('endDate').value;
-        if(s && e) days = getBusinessDays(s, e);
-    }
-    return days;
-}
-
-function toggleDayMode() {
-    const m = document.getElementById('dayMode').value;
-    document.getElementById('manualDaysBox').style.display = m === 'manual' ? 'block' : 'none';
-    document.getElementById('dateRangeBox').style.display = m === 'daterange' ? 'block' : 'none';
-}
-
-function getBusinessDays(s, e) {
-    let count = 0, cur = new Date(s), end = new Date(e);
-    while (cur <= end) { 
-        if (cur.getDay() !== 0 && cur.getDay() !== 6) count++; 
-        cur.setDate(cur.getDate() + 1); 
-    }
-    return count;
 }
 
 function createAgentInputRow() {
@@ -219,7 +247,7 @@ function createAgentInputRow() {
     block.innerHTML = `
         <button class="remove-block-btn" onclick="removeAgentInputRow(${agentInputCount})">✕</button>
         <div class="form-group"><label>Agent Name</label><input type="text" class="in-name" placeholder="Agent Name"></div>
-        <div class="form-row">
+        <div class="form-row-3">
             <div><label>Video (x5)</label><input type="number" class="in-video" placeholder="0"></div>
             <div><label>Audio (x4)</label><input type="number" class="in-audio" placeholder="0"></div>
             <div><label>FDB (x3)</label><input type="number" class="in-fdb" placeholder="0"></div>
@@ -234,7 +262,6 @@ function removeAgentInputRow(id) {
 }
 
 function calculateAllBatch() {
-    let days = getCalculatedDays();
     const blocks = document.querySelectorAll('.agent-block');
     blocks.forEach(b => {
         const name = b.querySelector('.in-name').value.trim();
@@ -242,7 +269,8 @@ function calculateAllBatch() {
         const audio = parseInt(b.querySelector('.in-audio').value) || 0;
         const fdb = parseInt(b.querySelector('.in-fdb').value) || 0;
         if(name !== "") {
-            agentData.push({ name, video, audio, fdb, days });
+            const earned = (video * 5) + (audio * 4) + (fdb * 3);
+            agentData.push({ name, video, audio, fdb, earned });
         }
     });
 
@@ -258,8 +286,10 @@ function deleteAgent(index) {
 }
 
 function clearAllData() {
-    agentData = [];
-    processAndRender();
+    if(confirm("Kiya aap poora table data clear karna chahte hain?")) {
+        agentData = [];
+        processAndRender();
+    }
 }
 
 function handleFileUpload(e) {
@@ -269,31 +299,33 @@ function handleFileUpload(e) {
         const data = new Uint8Array(evt.target.result);
         const wb = XLSX.read(data, {type: 'array'});
         const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-        let days = getCalculatedDays();
-        agentData = rows.map(r => ({
-            name: r['Agent'] || r['Name'] || 'Agent',
-            video: parseInt(r['Clinic Video Ca'] || r['Video'] || 0),
-            audio: parseInt(r['camp'] || r['Audio'] || 0),
-            fdb: parseInt(r['Connected Fdl'] || r['FDB'] || 0),
-            days: days
-        }));
+        
+        agentData = rows.map(r => {
+            const video = parseInt(r['Clinic Video Call'] || r['Video'] || 0);
+            const audio = parseInt(r['CAMP'] || r['Audio'] || 0);
+            const fdb = parseInt(r['Connected Fdb'] || r['FDB'] || 0);
+            const earned = r['Achieved'] ? parseInt(r['Achieved']) : ((video * 5) + (audio * 4) + (fdb * 3));
+
+            return {
+                name: r['Agent'] || r['Name'] || 'Agent',
+                video, audio, fdb, earned
+            };
+        });
         processAndRender();
     };
     reader.readAsArrayBuffer(file);
 }
 
 function processAndRender() {
-    const validData = agentData.filter(a => a.name && !a.name.includes("function") && !a.name.includes("(") && !a.name.includes("="));
+    const calcTarget = calculateComputedTarget().totalTarget || 6000;
 
-    const computed = validData.map(a => {
-        const earned = (a.video * 5) + (a.audio * 4) + (a.fdb * 3);
-        const target = a.days * 300;
-        const prod = target > 0 ? ((earned / target) * 100).toFixed(2) : 0;
-        return { ...a, earned, target, prod: parseFloat(prod) };
+    const computed = agentData.map(a => {
+        const prod = calcTarget > 0 ? Math.round((a.earned / calcTarget) * 100) : 0;
+        return { ...a, target: calcTarget, prod };
     });
     
     document.getElementById('kpiAgents').innerText = computed.length;
-    const avg = computed.length > 0 ? (computed.reduce((acc, c) => acc + c.prod, 0) / computed.length).toFixed(2) : 0;
+    const avg = computed.length > 0 ? Math.round(computed.reduce((acc, c) => acc + c.prod, 0) / computed.length) : 0;
     document.getElementById('kpiAvgProd').innerText = avg + '%';
     const top = [...computed].sort((a,b) => b.prod - a.prod)[0];
     document.getElementById('kpiTopAgent').innerText = top ? top.name + ' (' + top.prod + '%)' : '-';
