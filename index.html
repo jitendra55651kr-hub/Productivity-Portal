@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Dependencies: Chart.js, SheetJS (XLSX), PapaParse -->
+    <!-- Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -42,12 +42,15 @@
 
         /* Main Content */
         .main-content { flex: 1; padding: 25px; overflow-y: auto; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: var(--card-dark); padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 10px; }
-        .search-box { display: flex; align-items: center; gap: 10px; background: #0f172a; padding: 8px 15px; border-radius: 6px; border: 1px solid var(--border-color); width: 250px; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: var(--card-dark); padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 15px; }
+        .search-box { display: flex; align-items: center; gap: 10px; background: #0f172a; padding: 8px 15px; border-radius: 6px; border: 1px solid var(--border-color); width: 220px; }
         .search-box input { background: transparent; border: none; color: #fff; outline: none; width: 100%; }
         
         .filter-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        select, input[type="date"], input[type="text"], input[type="number"], input[type="url"] { background: #0f172a; border: 1px solid var(--border-color); color: #fff; padding: 8px 12px; border-radius: 6px; outline: none; }
+        .date-input-group { display: flex; align-items: center; gap: 8px; background: #0f172a; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); }
+        .date-input-group label { font-size: 0.8rem; color: var(--text-sub); font-weight: 500; }
+        
+        input[type="date"], input[type="text"], input[type="number"] { background: transparent; border: none; color: #fff; outline: none; font-size: 0.85rem; }
 
         /* KPI Grid */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
@@ -68,8 +71,6 @@
         /* Buttons & Layout */
         .btn { padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; }
         .btn-primary { background: var(--accent-blue); color: #0f172a; }
-        .btn-secondary { background: #475569; color: #fff; }
-        .btn-danger { background: var(--accent-red); color: #fff; }
         .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
         .btn-outline-gray { background: transparent; border: 1px solid var(--text-sub); color: var(--text-sub); }
         
@@ -83,11 +84,10 @@
         th, td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); }
         th { background: #0f172a; color: var(--text-sub); font-weight: 600; font-size: 0.8rem; }
 
-        /* Tabs & Helpers */
+        /* Helpers */
         .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .hidden { display: none !important; }
     </style>
 </head>
 <body class="dark-theme">
@@ -121,7 +121,7 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
-        <!-- Top Bar with Date Range Filters -->
+        <!-- Top Bar with Direct Date Range Filters -->
         <header class="top-bar">
             <div class="search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
@@ -129,17 +129,17 @@
             </div>
             
             <div class="filter-controls">
-                <select id="month-selector" onchange="recalculateTargetAndProductivity()">
-                    <!-- Auto-populated with current month -->
-                </select>
-
-                <div id="custom-date-container" class="hidden">
-                    <input type="date" id="filter-start-date">
-                    <span style="color:var(--text-sub)">to</span>
-                    <input type="date" id="filter-end-date">
-                    <button onclick="applyDateFilter()" class="btn btn-primary" style="padding:6px 12px;">Apply</button>
+                <div class="date-input-group">
+                    <label>From:</label>
+                    <input type="date" id="start-date" value="2026-05-21">
                 </div>
 
+                <div class="date-input-group">
+                    <label>To:</label>
+                    <input type="date" id="end-date" value="2026-06-15">
+                </div>
+
+                <button onclick="recalculateAndProcess()" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Calculate</button>
                 <button onclick="resetFilters()" class="btn btn-outline"><i class="fa-solid fa-rotate-left"></i> Reset</button>
             </div>
         </header>
@@ -151,13 +151,13 @@
             <section id="dashboard-tab" class="tab-content active">
                 <div class="kpi-grid">
                     <div class="kpi-card"><div class="kpi-icon blue"><i class="fa-solid fa-users"></i></div><div class="kpi-info"><span class="title">Total Agents</span><h3 id="kpi-agents">0</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon purple"><i class="fa-solid fa-calendar-day"></i></div><div class="kpi-info"><span class="title">Working Days (Excl. Sat/Sun)</span><h3 id="kpi-work-days">0</h3></div></div>
+                    <div class="kpi-card"><div class="kpi-icon purple"><i class="fa-solid fa-calendar-day"></i></div><div class="kpi-info"><span class="title">Working Days (Excl. Sat/Sun)</span><h3 id="kpi-work-days">17</h3></div></div>
                     <div class="kpi-card"><div class="kpi-icon teal"><i class="fa-solid fa-video"></i></div><div class="kpi-info"><span class="title">Clinic Videos</span><h3 id="kpi-videos">0</h3></div></div>
                     <div class="kpi-card"><div class="kpi-icon orange"><i class="fa-solid fa-campground"></i></div><div class="kpi-info"><span class="title">Camp Cases</span><h3 id="kpi-camps">0</h3></div></div>
                     <div class="kpi-card"><div class="kpi-icon green"><i class="fa-solid fa-phone"></i></div><div class="kpi-info"><span class="title">Connected FDB</span><h3 id="kpi-fdb">0</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon gold"><i class="fa-solid fa-trophy"></i></div><div class="kpi-info"><span class="title">Achieved Points (Inc. Weekends)</span><h3 id="kpi-achieved">0</h3></div></div>
+                    <div class="kpi-card"><div class="kpi-icon gold"><i class="fa-solid fa-trophy"></i></div><div class="kpi-info"><span class="title">Achieved Points</span><h3 id="kpi-achieved">0</h3></div></div>
                     <div class="kpi-card"><div class="kpi-icon red"><i class="fa-solid fa-bullseye"></i></div><div class="kpi-info"><span class="title">Target Points (Days × 300)</span><h3 id="kpi-target">0</h3></div></div>
-                    <div class="kpi-card highlight"><div class="kpi-icon main"><i class="fa-solid fa-gauge-high"></i></div><div class="kpi-info"><span class="title">Overall Productivity</span><h3 id="kpi-productivity">0%</h3></div></div>
+                    <div class="kpi-card highlight"><div class="kpi-icon main"><i class="fa-solid fa-gauge-high"></i></div><div class="kpi-info"><span class="title">Average Productivity</span><h3 id="kpi-productivity">0%</h3></div></div>
                 </div>
 
                 <div class="action-bar">
@@ -174,7 +174,7 @@
                                 <th>Camps (4pt)</th>
                                 <th>FDB (3pt)</th>
                                 <th>Achieved Points</th>
-                                <th>Target Points</th>
+                                <th>Total Target</th>
                                 <th>Productivity %</th>
                                 <th>Status</th>
                             </tr>
@@ -195,19 +195,19 @@
                         <form id="single-agent-form" onsubmit="handleSingleAgentSubmit(event)">
                             <div class="form-group" style="margin-bottom:12px;">
                                 <label>Agent Name *</label>
-                                <input type="text" id="sa-name" required placeholder="e.g. Rahul Sharma" style="width:100%;">
+                                <input type="text" id="sa-name" required placeholder="e.g. Saurav Pal" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
                             </div>
                             <div class="form-group" style="margin-bottom:12px;">
                                 <label>Clinic Video Call (5 pts)</label>
-                                <input type="number" id="sa-video" min="0" value="0" style="width:100%;">
+                                <input type="number" id="sa-video" min="0" value="0" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
                             </div>
                             <div class="form-group" style="margin-bottom:12px;">
                                 <label>Camp Cases (4 pts)</label>
-                                <input type="number" id="sa-camp" min="0" value="0" style="width:100%;">
+                                <input type="number" id="sa-camp" min="0" value="0" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
                             </div>
                             <div class="form-group" style="margin-bottom:15px;">
                                 <label>Connected FDB (3 pts)</label>
-                                <input type="number" id="sa-fdb" min="0" value="0" style="width:100%;">
+                                <input type="number" id="sa-fdb" min="0" value="0" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
                             </div>
                             <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fa-solid fa-plus"></i> Add Entry</button>
                         </form>
@@ -222,11 +222,11 @@
                     <p class="subtitle">Direct live connection with Google Sheet performance tab.</p>
                     <div class="form-group" style="margin-bottom:15px;">
                         <label>Google Sheet ID</label>
-                        <input type="text" id="gsheets-id" value="17mZJcOCzSVJ_w7m_RGi51Jf1kOHPRMD-x99fOJ0KkfQ" style="width:100%;">
+                        <input type="text" id="gsheets-id" value="17mZJcOCzSVJ_w7m_RGi51Jf1kOHPRMD-x99fOJ0KkfQ" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
                     </div>
                     <div class="form-group" style="margin-bottom:15px;">
                         <label>Sheet Tab GID</label>
-                        <input type="text" id="gsheets-gid" value="531272320" style="width:100%;">
+                        <input type="text" id="gsheets-gid" value="531272320" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
                     </div>
                     <button onclick="fetchFromGoogleSheet()" class="btn btn-primary" id="gs-btn"><i class="fa-solid fa-cloud-download"></i> Fetch Data Live</button>
                 </div>
@@ -241,8 +241,7 @@
                         <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Clinic Video Call = <strong>5 Points</strong></li>
                         <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Camp Case = <strong>4 Points</strong></li>
                         <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Connected FDB = <strong>3 Points</strong></li>
-                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Daily Target = <strong>300 Points / Working Day</strong></li>
-                        <li><i class="fa-solid fa-star" style="color:var(--accent-gold)"></i> Weekend Bonus = <strong>Sat & Sun output added directly to Achieved Points!</strong></li>
+                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Target Rule = <strong>Working Days (Mon-Fri) × 300 Points</strong></li>
                     </ul>
                 </div>
             </section>
@@ -253,37 +252,27 @@
     <script>
         let globalRawData = [];
 
-        // Helper function: Calculates working days in a given month excluding Saturday and Sunday
-        function getWorkingDaysInMonth(year, monthIndex) {
-            let workingDays = 0;
-            const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+        // Function to calculate exact working days between two dates excluding Saturday & Sunday
+        function calculateWorkingDays(startDateStr, endDateStr) {
+            if(!startDateStr || !endDateStr) return 0;
             
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dayOfWeek = new Date(year, monthIndex, day).getDay();
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0 = Sunday, 6 = Saturday
-                    workingDays++;
-                }
-            }
-            return workingDays;
-        }
+            let start = new Date(startDateStr);
+            let end = new Date(endDateStr);
+            
+            if (start > end) return 0;
 
-        // Initialize Month Selector
-        function initMonthSelector() {
-            const selector = document.getElementById("month-selector");
-            const now = new Date();
-            const year = now.getFullYear();
-            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            
-            selector.innerHTML = "";
-            months.forEach((m, idx) => {
-                const opt = document.createElement("option");
-                opt.value = idx;
-                opt.text = `${m} ${year}`;
-                if(idx === now.getMonth()) opt.selected = true;
-                selector.appendChild(opt);
-            });
+            let count = 0;
+            let curDate = new Date(start.getTime());
+
+            while (curDate <= end) {
+                let dayOfWeek = curDate.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0 = Sunday, 6 = Saturday
+                    count++;
+                }
+                curDate.setDate(curDate.getDate() + 1);
+            }
+            return count;
         }
-        initMonthSelector();
 
         function switchTab(tabId, el) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -342,7 +331,7 @@
             switchTab('dashboard-tab', document.querySelectorAll('.nav-item')[0]);
         }
 
-        function recalculateTargetAndProductivity() {
+        function recalculateAndProcess() {
             processRawData(globalRawData);
         }
 
@@ -350,13 +339,15 @@
             const tbody = document.getElementById("ranking-tbody");
             tbody.innerHTML = "";
 
-            // Calculate Target based on Working Days (Mon-Fri) * 300
-            const selectedMonth = parseInt(document.getElementById("month-selector").value);
-            const currentYear = new Date().getFullYear();
-            const workingDays = getWorkingDaysInMonth(currentYear, selectedMonth);
+            const startDate = document.getElementById("start-date").value;
+            const endDate = document.getElementById("end-date").value;
+            
+            // Calculating exact working days between the two dates
+            const workingDays = calculateWorkingDays(startDate, endDate);
             const targetPerAgent = workingDays * 300;
 
-            let totalAgents = 0, totalVid = 0, totalCamp = 0, totalFdb = 0, totalAchieved = 0, totalTarget = 0;
+            let totalAgents = 0, totalVid = 0, totalCamp = 0, totalFdb = 0, totalAchieved = 0;
+            let sumProductivity = 0;
 
             rows.forEach(row => {
                 const agent = row["Agent"] || row["Agent Name"] || row["AGENT"] || "";
@@ -368,12 +359,13 @@
 
                     totalVid += video; totalCamp += camp; totalFdb += fdb;
 
-                    // Achieved Points includes ALL days (Mon-Sun)
+                    // Calculate Achieved Points
                     const achieved = (video * 5) + (camp * 4) + (fdb * 3);
                     totalAchieved += achieved;
-                    totalTarget += targetPerAgent;
 
-                    const prod = Math.round((achieved / targetPerAgent) * 100);
+                    const prod = targetPerAgent > 0 ? Math.round((achieved / targetPerAgent) * 100) : 0;
+                    sumProductivity += prod;
+
                     const statusHTML = prod >= 100 ? `<span style="color:var(--accent-green); font-weight:600;">Achieved</span>` : `<span style="color:var(--accent-red); font-weight:600;">Pending</span>`;
 
                     tbody.innerHTML += `
@@ -397,10 +389,11 @@
             document.getElementById("kpi-camps").innerText = totalCamp;
             document.getElementById("kpi-fdb").innerText = totalFdb;
             document.getElementById("kpi-achieved").innerText = totalAchieved;
-            document.getElementById("kpi-target").innerText = totalTarget;
+            document.getElementById("kpi-target").innerText = targetPerAgent;
             
-            const overallProd = totalTarget > 0 ? Math.round((totalAchieved / totalTarget) * 100) : 0;
-            document.getElementById("kpi-productivity").innerText = overallProd + "%";
+            // Average Productivity across all agents
+            const avgProductivity = totalAgents > 0 ? Math.round(sumProductivity / totalAgents) : 0;
+            document.getElementById("kpi-productivity").innerText = avgProductivity + "%";
         }
 
         function filterAgentTable() {
@@ -414,7 +407,8 @@
 
         function resetFilters() {
             document.getElementById("agent-search").value = "";
-            document.getElementById("month-selector").value = new Date().getMonth();
+            document.getElementById("start-date").value = "2026-05-21";
+            document.getElementById("end-date").value = "2026-06-15";
             processRawData(globalRawData);
         }
     </script>
