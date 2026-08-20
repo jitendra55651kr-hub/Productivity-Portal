@@ -22,17 +22,13 @@
             border: 1px solid #334155;
             color: #f8fafc;
         }
-        /* Date Picker Icon Visibility Fix */
+        /* Date input icon visibility fix (White calendar icon) */
         input[type="date"] {
             color-scheme: dark;
         }
         input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(1);
             cursor: pointer;
-            opacity: 0.8;
-        }
-        input[type="date"]::-webkit-calendar-picker-indicator:hover {
-            opacity: 1;
         }
     </style>
 </head>
@@ -79,34 +75,33 @@
     <!-- Main Content -->
     <main class="flex-1 overflow-y-auto p-6 space-y-6">
 
-        <!-- Top Filters & Date Section -->
+        <!-- Top Filters & Manual Override Bar -->
         <div class="card-bg p-4 rounded-xl flex flex-wrap items-center justify-between gap-4">
             <!-- Search Agent -->
             <div class="relative flex-1 min-w-[200px]">
                 <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-slate-400"></i>
-                <input type="text" id="searchAgent" placeholder="Search agent name..." class="w-full pl-9 pr-4 py-2 rounded-lg input-bg text-sm focus:outline-none focus:border-blue-500">
+                <input type="text" id="searchAgent" placeholder="Search agent name..." class="w-full pl-9 pr-4 py-2 rounded-lg input-bg text-sm focus:outline-none focus:border-blue-500 text-white">
             </div>
 
-            <!-- Date Range Inputs (With Visible Calendar Icons) -->
+            <!-- Date Range & Manual Days Input -->
             <div class="flex flex-wrap items-center gap-3">
                 <div class="flex items-center space-x-2 text-sm text-slate-300">
-                    <span class="font-medium text-slate-400">From:</span>
-                    <input type="date" id="fromDate" value="2026-05-21" class="input-bg px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-700 text-slate-100 focus:outline-none focus:border-blue-500">
+                    <span>From:</span>
+                    <input type="date" id="fromDate" value="2026-05-21" class="input-bg px-3 py-1.5 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
                 </div>
-                
                 <div class="flex items-center space-x-2 text-sm text-slate-300">
-                    <span class="font-medium text-slate-400">To:</span>
-                    <input type="date" id="toDate" value="2026-06-15" class="input-bg px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-700 text-slate-100 focus:outline-none focus:border-blue-500">
+                    <span>To:</span>
+                    <input type="date" id="toDate" value="2026-06-15" class="input-bg px-3 py-1.5 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
                 </div>
 
                 <!-- Manual Working Days Input -->
-                <div class="flex items-center space-x-2 text-sm text-slate-300 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                <div class="flex items-center space-x-2 text-sm text-slate-300 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-700">
                     <span class="text-blue-400 font-medium">Manual Days:</span>
-                    <input type="number" id="manualDays" placeholder="Auto" min="0" class="w-20 input-bg px-2 py-1 rounded text-sm text-center font-bold focus:outline-none focus:border-blue-500">
+                    <input type="number" id="manualDays" placeholder="Auto" min="0" class="w-20 input-bg px-2 py-1 rounded text-sm text-center text-white focus:outline-none focus:border-blue-500">
                 </div>
 
                 <!-- Action Buttons -->
-                <button onclick="calculateMetrics()" class="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-md shadow-blue-600/20">
+                <button onclick="calculateMetrics()" class="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
                     <i data-lucide="filter" class="w-4 h-4"></i>
                     <span>Calculate</span>
                 </button>
@@ -119,6 +114,7 @@
 
         <!-- Metrics Cards Grid -->
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <!-- Total Agents -->
             <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
                 <div class="p-3 bg-blue-500/10 text-blue-500 rounded-lg">
                     <i data-lucide="users" class="w-6 h-6"></i>
@@ -129,6 +125,7 @@
                 </div>
             </div>
 
+            <!-- Working Days -->
             <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
                 <div class="p-3 bg-purple-500/10 text-purple-500 rounded-lg">
                     <i data-lucide="calendar" class="w-6 h-6"></i>
@@ -139,6 +136,7 @@
                 </div>
             </div>
 
+            <!-- Clinic Videos -->
             <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
                 <div class="p-3 bg-teal-500/10 text-teal-500 rounded-lg">
                     <i data-lucide="video" class="w-6 h-6"></i>
@@ -149,6 +147,7 @@
                 </div>
             </div>
 
+            <!-- Camp Cases -->
             <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
                 <div class="p-3 bg-orange-500/10 text-orange-500 rounded-lg">
                     <i data-lucide="tent" class="w-6 h-6"></i>
@@ -159,6 +158,7 @@
                 </div>
             </div>
 
+            <!-- Connected FDB -->
             <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
                 <div class="p-3 bg-sky-500/10 text-sky-500 rounded-lg">
                     <i data-lucide="phone-call" class="w-6 h-6"></i>
@@ -169,6 +169,7 @@
                 </div>
             </div>
 
+            <!-- Achieved Points -->
             <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
                 <div class="p-3 bg-amber-500/10 text-amber-500 rounded-lg">
                     <i data-lucide="trophy" class="w-6 h-6"></i>
@@ -179,6 +180,7 @@
                 </div>
             </div>
 
+            <!-- Target Points -->
             <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
                 <div class="p-3 bg-rose-500/10 text-rose-500 rounded-lg">
                     <i data-lucide="target" class="w-6 h-6"></i>
@@ -189,6 +191,7 @@
                 </div>
             </div>
 
+            <!-- Average Productivity -->
             <div class="card-bg p-4 rounded-xl flex items-center space-x-4 border-blue-500/50">
                 <div class="p-3 bg-blue-500/20 text-blue-400 rounded-lg">
                     <i data-lucide="gauge" class="w-6 h-6"></i>
@@ -250,7 +253,7 @@
 
             while (cur <= end) {
                 const dayOfWeek = cur.getDay();
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) { 
                     count++;
                 }
                 cur.setDate(cur.getDate() + 1);
@@ -276,7 +279,8 @@
             }
 
             document.getElementById('cardWorkingDays').innerText = finalWorkingDays;
-            document.getElementById('cardTargetPoints').innerText = finalWorkingDays * 300;
+            const targetPointsPerAgent = finalWorkingDays * 300;
+            document.getElementById('cardTargetPoints').innerText = targetPointsPerAgent;
         }
 
         function resetFilters() {
