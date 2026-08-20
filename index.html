@@ -229,7 +229,7 @@
                     </p>
                     <div class="file-upload-box" onclick="document.getElementById('excel-file-input').click()">
                         <i class="fa-solid fa-cloud-arrow-up" style="font-size:3rem; color:var(--accent-blue); margin-bottom:15px;"></i>
-                        <h4>Click or Drag Excel / CSV file here</h4>
+                        <h4 id="upload-box-title">Click or Drag Excel / CSV file here</h4>
                         <p style="color:var(--text-sub); font-size:0.8rem; margin-top:5px;">Supports Agent Stats, myDBR, and custom spreadsheet formats</p>
                         <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" style="display:none" onchange="handleFileUpload(event)">
                     </div>
@@ -350,7 +350,6 @@
                 return;
             }
 
-            // 'Select All' Option
             let selectAllDiv = document.createElement("div");
             selectAllDiv.className = "dropdown-item";
             selectAllDiv.innerHTML = `<input type="checkbox" id="chk-all" checked onchange="toggleSelectAllAgents(this)"> <strong>Select All</strong>`;
@@ -408,30 +407,82 @@
             }
         }
 
-        // File Upload Handler (Excel/CSV)
+        // Dual File Handler for CSV & Excel
         function handleFileUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                const data = new Uint8Array(evt.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                globalRawData = XLSX.utils.sheet_to_json(worksheet);
+            document.getElementById("upload-box-title").innerText = `Processing: ${file.name}...`;
 
-                setupAndProcessData();
-                switchTab(null, 'dashboard-tab', document.querySelectorAll('.nav-item')[0]);
-            };
-            reader.readAsArrayBuffer(file);
+            const fileName = file.name.toLowerCase();
+
+            if (fileName.endsWith('.csv')) {
+                // Use PapaParse for CSV
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        globalRawData = results.data;
+                        document.getElementById("upload-box-title").innerText = `Uploaded: ${file.name}`;
+                        setupAndProcessData();
+                        switchTab(null, 'dashboard-tab', document.querySelectorAll('.nav-item')[0]);
+                    },
+                    error: function(err) {
+                        alert("Error reading CSV File!");
+                    }
+                });
+            } else {
+                // Use XLSX for Excel (.xlsx, .xls)
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    try {
+                        const data = new Uint8Array(evt.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        globalRawData = XLSX.utils.sheet_to_json(worksheet);
+
+                        document.getElementById("upload-box-title").innerText = `Uploaded: ${file.name}`;
+                        setupAndProcessData();
+                        switchTab(null, 'dashboard-tab', document.querySelectorAll('.nav-item')[0]);
+                    } catch(err) {
+                        alert("Error reading Excel File!");
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        // Helper to normalize column keys for flexible matching
+        function getVal(row, possibleKeys) {
+            const keys = Object.keys(row);
+            for (let key of keys) {
+                let cleanKey = key.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                for (let target of possibleKeys) {
+                    if (cleanKey === target.toLowerCase().replace(/[^a-z0-9]/g, '')) {
+                        return row[key];
+                    }
+                }
+            }
+            return 0;
+        }
+
+        function getAgentName(row) {
+            const keys = Object.keys(row);
+            for (let key of keys) {
+                let cleanKey = key.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (cleanKey === 'agent' || cleanKey === 'agentname' || cleanKey === 'name') {
+                    return String(row[key]).trim();
+                }
+            }
+            return "";
         }
 
         function setupAndProcessData() {
             let uniqueAgents = new Set();
             globalRawData.forEach(row => {
-                const name = row["Agent"] || row["Agent Name"] || row["AGENT"] || row["agent"] || "";
-                if(name.trim() !== "") uniqueAgents.add(name.trim());
+                const name = getAgentName(row);
+                if(name !== "") uniqueAgents.add(name);
             });
 
             populateAgentDropdown(Array.from(uniqueAgents));
@@ -509,14 +560,13 @@
             let chartTargets = [];
 
             rows.forEach(row => {
-                const agent = (row["Agent"] || row["Agent Name"] || row["AGENT"] || row["agent"] || "").trim();
+                const agent = getAgentName(row);
                 
-                // Filter apply check
                 if(agent !== "" && selectedAgents.has(agent)) {
                     totalAgents++;
-                    const video = parseInt(row["Clinic Video Call"] || row["Clinic Video"] || row["Video"] || row["Clinic Video Call"] || 0) || 0;
-                    const camp = parseInt(row["CAMP"] || row["Camp Cases"] || row["Camp"] || 0) || 0;
-                    const fdb = parseInt(row["Connected Fdb"] || row["Connected FDB"] || row["Fdb"] || row["Connected Fdb"] || 0) || 0;
+                    const video = parseInt(getVal(row, ["Clinic Video Call", "Clinic Video", "Video", "Videos"])) || 0;
+                    const camp = parseInt(getVal(row, ["CAMP", "Camp Cases", "Camp", "Camps"])) || 0;
+                    const fdb = parseInt(getVal(row, ["Connected Fdb", "Connected FDB", "Fdb", "FDB"])) || 0;
 
                     totalVid += video; totalCamp += camp; totalFdb += fdb;
 
@@ -563,7 +613,7 @@
             document.getElementById("kpi-target").innerText = totalAgents * targetPerAgent;
             document.getElementById("kpi-productivity").innerText = (totalAgents > 0 ? Math.round(sumProductivity / totalAgents) : 0) + "%";
 
-            // Render HighTech Performance Chart
+            // Render Chart
             renderChart(chartLabels, chartAchieved, chartTargets);
         }
 
