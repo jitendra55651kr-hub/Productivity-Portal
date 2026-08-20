@@ -3,295 +3,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Productivity Calculator</title>
-    <!-- Lucide Icons & Tailwind CSS -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Agent Productivity Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
     <style>
-        body {
-            background-color: #0f172a;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
+        :root {
+            --bg-dark: #0f172a;
+            --card-dark: #1e293b;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-purple: #a855f7;
+            --accent-orange: #f97316;
+            --accent-gold: #eab308;
         }
-        .card-bg {
-            background-color: #1e293b;
-            border: 1px solid #334155;
-        }
-        .input-bg {
-            background-color: #0f172a;
-            border: 1px solid #334155;
-            color: #f8fafc;
-        }
-        /* Date input icon visibility fix (White calendar icon) */
-        input[type="date"] {
-            color-scheme: dark;
-        }
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body.dark-theme { background-color: var(--bg-dark); color: var(--text-main); display: flex; min-height: 100vh; }
+
+        /* Sidebar */
+        .sidebar { width: 260px; background-color: var(--card-dark); padding: 20px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; }
+        .brand { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; color: var(--accent-blue); margin-bottom: 25px; }
+        .brand h2 span { color: #fff; }
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
+        .nav-item { color: var(--text-sub); text-decoration: none; padding: 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px; transition: 0.2s; font-size: 0.95rem; }
+        .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; }
+        .theme-toggle { display: flex; align-items: center; gap: 10px; color: var(--text-sub); justify-content: center; padding-top: 15px; border-top: 1px solid var(--border-color); }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: var(--card-dark); padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 15px; }
+        .search-box { display: flex; align-items: center; gap: 10px; background: #0f172a; padding: 8px 15px; border-radius: 6px; border: 1px solid var(--border-color); width: 220px; }
+        .search-box input { background: transparent; border: none; color: #fff; outline: none; width: 100%; }
+        
+        .filter-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .date-input-group { display: flex; align-items: center; gap: 8px; background: #0f172a; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer; }
+        .date-input-group label { font-size: 0.8rem; color: var(--text-sub); font-weight: 500; cursor: pointer; }
+        
+        input[type="date"] { 
+            background: transparent; 
+            border: none; 
+            color: #fff; 
+            outline: none; 
+            font-size: 0.85rem; 
             cursor: pointer;
+            color-scheme: dark; /* Dark theme calendar icon */
         }
+
+        input[type="text"], input[type="number"] { background: transparent; border: none; color: #fff; outline: none; font-size: 0.85rem; }
+
+        /* KPI Grid */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .kpi-card { background: var(--card-dark); border: 1px solid var(--border-color); padding: 18px; border-radius: 12px; display: flex; align-items: center; gap: 15px; }
+        .kpi-card.highlight { border-color: var(--accent-blue); background: #1e293b; }
+        .kpi-icon { width: 45px; height: 45px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; background: #334155; }
+        .kpi-icon.blue { color: var(--accent-blue); }
+        .kpi-icon.purple { color: var(--accent-purple); }
+        .kpi-icon.teal { color: #14b8a6; }
+        .kpi-icon.orange { color: var(--accent-orange); }
+        .kpi-icon.green { color: var(--accent-green); }
+        .kpi-icon.gold { color: var(--accent-gold); }
+        .kpi-icon.red { color: var(--accent-red); }
+        .kpi-icon.main { color: #fff; background: var(--accent-blue); }
+        .kpi-info .title { font-size: 0.75rem; color: var(--text-sub); display: block; }
+        .kpi-info h3, .kpi-info h4 { font-size: 1.3rem; margin-top: 2px; }
+
+        /* Buttons & Layout */
+        .btn { padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+        .btn-primary { background: var(--accent-blue); color: #0f172a; }
+        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
+        .btn-outline-gray { background: transparent; border: 1px solid var(--text-sub); color: var(--text-sub); }
+        
+        .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card { background: var(--card-dark); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .subtitle { font-size: 0.85rem; color: var(--text-sub); margin-top: 5px; margin-bottom: 15px; }
+
+        /* Table */
+        .card-table { background: var(--card-dark); border: 1px solid var(--border-color); border-radius: 12px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        th, td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); }
+        th { background: #0f172a; color: var(--text-sub); font-weight: 600; font-size: 0.8rem; }
+
+        /* Helpers */
+        .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
-
-    <!-- Sidebar -->
-    <aside class="w-64 card-bg border-r border-slate-800 flex flex-col justify-between p-4">
+<body class="dark-theme">
+    <aside class="sidebar">
         <div>
-            <!-- Header/Logo -->
-            <div class="flex items-center space-x-2 mb-8 px-2">
-                <i data-lucide="line-chart" class="text-blue-500 w-8 h-8"></i>
-                <h1 class="text-xl font-bold tracking-wide">
-                    Productivity<span class="text-blue-500">Calculator</span>
-                </h1>
+            <div class="brand">
+                <i class="fa-solid fa-chart-line logo-icon"></i>
+                <h2>Productivity <span>Calculator</span></h2>
             </div>
-
-            <!-- Navigation Links -->
-            <nav class="space-y-2">
-                <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-blue-600 text-white font-medium">
-                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-                    <span>Dashboard</span>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" onclick="switchTab('dashboard-tab', this)">
+                    <i class="fa-solid fa-house"></i> Dashboard
                 </a>
-                <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
-                    <i data-lucide="user" class="w-5 h-5"></i>
-                    <span>Single Agent</span>
+                <a href="#" class="nav-item" onclick="switchTab('single-agent-tab', this)">
+                    <i class="fa-solid fa-user"></i> Single Agent
                 </a>
-                <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
-                    <i data-lucide="table" class="w-5 h-5"></i>
-                    <span>Google Sheets</span>
+                <a href="#" class="nav-item" onclick="switchTab('google-sheets-tab', this)">
+                    <i class="fa-solid fa-table"></i> Google Sheets
                 </a>
-                <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
-                    <i data-lucide="settings" class="w-5 h-5"></i>
-                    <span>Configuration</span>
+                <a href="#" class="nav-item" onclick="switchTab('settings-tab', this)">
+                    <i class="fa-solid fa-gear"></i> Configuration
                 </a>
             </nav>
         </div>
-
-        <div class="flex items-center space-x-2 text-slate-400 px-2 py-3">
-            <i data-lucide="moon" class="w-5 h-5"></i>
-            <span class="text-sm">Dark Theme</span>
+        <div class="theme-toggle">
+            <i class="fa-solid fa-moon" style="color:var(--accent-blue)"></i>
+            <span style="font-size:0.8rem">Dark Theme</span>
         </div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto p-6 space-y-6">
-
-        <!-- Top Filters & Manual Override Bar -->
-        <div class="card-bg p-4 rounded-xl flex flex-wrap items-center justify-between gap-4">
-            <!-- Search Agent -->
-            <div class="relative flex-1 min-w-[200px]">
-                <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-slate-400"></i>
-                <input type="text" id="searchAgent" placeholder="Search agent name..." class="w-full pl-9 pr-4 py-2 rounded-lg input-bg text-sm focus:outline-none focus:border-blue-500 text-white">
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="agent-search" oninput="filterAgentTable()" placeholder="Search agent name...">
             </div>
-
-            <!-- Date Range & Manual Days Input -->
-            <div class="flex flex-wrap items-center gap-3">
-                <div class="flex items-center space-x-2 text-sm text-slate-300">
-                    <span>From:</span>
-                    <input type="date" id="fromDate" value="2026-05-21" class="input-bg px-3 py-1.5 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
-                </div>
-                <div class="flex items-center space-x-2 text-sm text-slate-300">
-                    <span>To:</span>
-                    <input type="date" id="toDate" value="2026-06-15" class="input-bg px-3 py-1.5 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+            
+            <div class="filter-controls">
+                <div class="date-input-group" onclick="openPicker('start-date')">
+                    <label>From:</label>
+                    <input type="date" id="start-date" value="2026-05-21">
                 </div>
 
-                <!-- Manual Working Days Input -->
-                <div class="flex items-center space-x-2 text-sm text-slate-300 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-700">
-                    <span class="text-blue-400 font-medium">Manual Days:</span>
-                    <input type="number" id="manualDays" placeholder="Auto" min="0" class="w-20 input-bg px-2 py-1 rounded text-sm text-center text-white focus:outline-none focus:border-blue-500">
+                <div class="date-input-group" onclick="openPicker('end-date')">
+                    <label>To:</label>
+                    <input type="date" id="end-date" value="2026-06-15">
                 </div>
 
-                <!-- Action Buttons -->
-                <button onclick="calculateMetrics()" class="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                    <i data-lucide="filter" class="w-4 h-4"></i>
-                    <span>Calculate</span>
-                </button>
-                <button onclick="resetFilters()" class="flex items-center space-x-2 border border-slate-700 hover:bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium transition">
-                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                    <span>Reset</span>
-                </button>
+                <div class="date-input-group" title="Leave empty to use auto Mon-Fri calculation">
+                    <label>Manual Days:</label>
+                    <input type="number" id="manual-working-days" placeholder="Auto" min="0" style="width: 50px;">
+                </div>
+
+                <button onclick="recalculateAndProcess()" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Calculate</button>
+                <button onclick="resetFilters()" class="btn btn-outline"><i class="fa-solid fa-rotate-left"></i> Reset</button>
             </div>
-        </div>
+        </header>
 
-        <!-- Metrics Cards Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <!-- Total Agents -->
-            <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
-                <div class="p-3 bg-blue-500/10 text-blue-500 rounded-lg">
-                    <i data-lucide="users" class="w-6 h-6"></i>
+        <div class="content-wrapper">
+            
+            <section id="dashboard-tab" class="tab-content active">
+                <div class="kpi-grid">
+                    <div class="kpi-card"><div class="kpi-icon blue"><i class="fa-solid fa-users"></i></div><div class="kpi-info"><span class="title">Total Agents</span><h3 id="kpi-agents">0</h3></div></div>
+                    <div class="kpi-card"><div class="kpi-icon purple"><i class="fa-solid fa-calendar-day"></i></div><div class="kpi-info"><span class="title">Working Days (Excl. Sat/Sun)</span><h3 id="kpi-work-days">17</h3></div></div>
+                    <div class="kpi-card"><div class="kpi-icon teal"><i class="fa-solid fa-video"></i></div><div class="kpi-info"><span class="title">Clinic Videos</span><h3 id="kpi-videos">0</h3></div></div>
+                    <div class="kpi-card"><div class="kpi-icon orange"><i class="fa-solid fa-campground"></i></div><div class="kpi-info"><span class="title">Camp Cases</span><h3 id="kpi-camps">0</h3></div></div>
+                    <div class="kpi-card"><div class="kpi-icon green"><i class="fa-solid fa-phone"></i></div><div class="kpi-info"><span class="title">Connected FDB</span><h3 id="kpi-fdb">0</h3></div></div>
+                    <div class="kpi-card"><div class="kpi-icon gold"><i class="fa-solid fa-trophy"></i></div><div class="kpi-info"><span class="title">Achieved Points</span><h3 id="kpi-achieved">0</h3></div></div>
+                    <div class="kpi-card"><div class="kpi-icon red"><i class="fa-solid fa-bullseye"></i></div><div class="kpi-info"><span class="title">Target Points (Days × 300)</span><h3 id="kpi-target">0</h3></div></div>
+                    <div class="kpi-card highlight"><div class="kpi-icon main"><i class="fa-solid fa-gauge-high"></i></div><div class="kpi-info"><span class="title">Average Productivity</span><h3 id="kpi-productivity">0%</h3></div></div>
                 </div>
-                <div>
-                    <p class="text-xs text-slate-400">Total Agents</p>
-                    <h3 class="text-2xl font-bold" id="cardTotalAgents">0</h3>
-                </div>
-            </div>
 
-            <!-- Working Days -->
-            <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
-                <div class="p-3 bg-purple-500/10 text-purple-500 rounded-lg">
-                    <i data-lucide="calendar" class="w-6 h-6"></i>
+                <div class="action-bar">
+                    <h3><i class="fa-solid fa-list-ol"></i> Agent Rankings & Productivity Summary</h3>
+                    <button onclick="window.print()" class="btn btn-outline-gray"><i class="fa-solid fa-print"></i> Print</button>
                 </div>
-                <div>
-                    <p class="text-xs text-slate-400" id="workingDaysLabel">Working Days (Excl. Sat/Sun)</p>
-                    <h3 class="text-2xl font-bold" id="cardWorkingDays">0</h3>
-                </div>
-            </div>
 
-            <!-- Clinic Videos -->
-            <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
-                <div class="p-3 bg-teal-500/10 text-teal-500 rounded-lg">
-                    <i data-lucide="video" class="w-6 h-6"></i>
+                <div class="card-table">
+                    <table id="ranking-table">
+                        <thead>
+                            <tr>
+                                <th>Agent Name</th>
+                                <th>Videos (5pt)</th>
+                                <th>Camps (4pt)</th>
+                                <th>FDB (3pt)</th>
+                                <th>Achieved Points</th>
+                                <th>Total Target</th>
+                                <th>Productivity %</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ranking-tbody">
+                            <tr><td colspan="8" style="text-align:center; color: var(--text-sub);">No data available. Click 'Fetch Data Live' under Google Sheets tab.</td></tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div>
-                    <p class="text-xs text-slate-400">Clinic Videos</p>
-                    <h3 class="text-2xl font-bold" id="cardClinicVideos">0</h3>
-                </div>
-            </div>
+            </section>
 
-            <!-- Camp Cases -->
-            <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
-                <div class="p-3 bg-orange-500/10 text-orange-500 rounded-lg">
-                    <i data-lucide="tent" class="w-6 h-6"></i>
+            <section id="single-agent-tab" class="tab-content">
+                <div class="grid-2col">
+                    <div class="card">
+                        <h3><i class="fa-solid fa-user-plus"></i> Single Agent Entry</h3>
+                        <br>
+                        <form id="single-agent-form" onsubmit="handleSingleAgentSubmit(event)">
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <label>Agent Name *</label>
+                                <input type="text" id="sa-name" required placeholder="e.g. Saurav Pal" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <label>Clinic Video Call (5 pts)</label>
+                                <input type="number" id="sa-video" min="0" value="0" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <label>Camp Cases (4 pts)</label>
+                                <input type="number" id="sa-camp" min="0" value="0" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom:15px;">
+                                <label>Connected FDB (3 pts)</label>
+                                <input type="number" id="sa-fdb" min="0" value="0" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fa-solid fa-plus"></i> Add Entry</button>
+                        </form>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-xs text-slate-400">Camp Cases</p>
-                    <h3 class="text-2xl font-bold" id="cardCampCases">0</h3>
-                </div>
-            </div>
+            </section>
 
-            <!-- Connected FDB -->
-            <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
-                <div class="p-3 bg-sky-500/10 text-sky-500 rounded-lg">
-                    <i data-lucide="phone-call" class="w-6 h-6"></i>
+            <section id="google-sheets-tab" class="tab-content">
+                <div class="card">
+                    <h3><i class="fa-brands fa-google-drive"></i> Google Sheets Live Fetch</h3>
+                    <p class="subtitle">Direct live connection with Google Sheet performance tab.</p>
+                    <div class="form-group" style="margin-bottom:15px;">
+                        <label>Google Sheet ID</label>
+                        <input type="text" id="gsheets-id" value="17mZJcOCzSVJ_w7m_RGi51Jf1kOHPRMD-x99fOJ0KkfQ" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:15px;">
+                        <label>Sheet Tab GID</label>
+                        <input type="text" id="gsheets-gid" value="531272320" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
+                    </div>
+                    <button onclick="fetchFromGoogleSheet()" class="btn btn-primary" id="gs-btn"><i class="fa-solid fa-cloud-download"></i> Fetch Data Live</button>
                 </div>
-                <div>
-                    <p class="text-xs text-slate-400">Connected FDB</p>
-                    <h3 class="text-2xl font-bold" id="cardConnectedFDB">0</h3>
-                </div>
-            </div>
+            </section>
 
-            <!-- Achieved Points -->
-            <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
-                <div class="p-3 bg-amber-500/10 text-amber-500 rounded-lg">
-                    <i data-lucide="trophy" class="w-6 h-6"></i>
+            <section id="settings-tab" class="tab-content">
+                <div class="card">
+                    <h3><i class="fa-solid fa-sliders"></i> Configuration & Point System</h3>
+                    <br>
+                    <ul style="list-style:none; line-height:2.2;">
+                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Clinic Video Call = <strong>5 Points</strong></li>
+                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Camp Case = <strong>4 Points</strong></li>
+                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Connected FDB = <strong>3 Points</strong></li>
+                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Target Rule = <strong>Working Days (Mon-Fri or Manual Input) × 300 Points</strong></li>
+                    </ul>
                 </div>
-                <div>
-                    <p class="text-xs text-slate-400">Achieved Points</p>
-                    <h3 class="text-2xl font-bold" id="cardAchievedPoints">0</h3>
-                </div>
-            </div>
+            </section>
 
-            <!-- Target Points -->
-            <div class="card-bg p-4 rounded-xl flex items-center space-x-4">
-                <div class="p-3 bg-rose-500/10 text-rose-500 rounded-lg">
-                    <i data-lucide="target" class="w-6 h-6"></i>
-                </div>
-                <div>
-                    <p class="text-xs text-slate-400">Target Points (Days × 300)</p>
-                    <h3 class="text-2xl font-bold" id="cardTargetPoints">0</h3>
-                </div>
-            </div>
-
-            <!-- Average Productivity -->
-            <div class="card-bg p-4 rounded-xl flex items-center space-x-4 border-blue-500/50">
-                <div class="p-3 bg-blue-500/20 text-blue-400 rounded-lg">
-                    <i data-lucide="gauge" class="w-6 h-6"></i>
-                </div>
-                <div>
-                    <p class="text-xs text-slate-400">Average Productivity</p>
-                    <h3 class="text-2xl font-bold text-blue-400" id="cardAvgProductivity">0%</h3>
-                </div>
-            </div>
-        </div>
-
-        <!-- Table Section -->
-        <div class="card-bg rounded-xl overflow-hidden">
-            <div class="p-4 border-b border-slate-800 flex justify-between items-center">
-                <h2 class="font-semibold text-slate-200 flex items-center gap-2">
-                    <i data-lucide="list-filter" class="w-5 h-5 text-blue-500"></i>
-                    Agent Rankings & Productivity Summary
-                </h2>
-                <button class="flex items-center space-x-2 border border-slate-700 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium">
-                    <i data-lucide="printer" class="w-4 h-4"></i>
-                    <span>Print</span>
-                </button>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-slate-300">
-                    <thead class="bg-slate-900/50 text-slate-400 text-xs uppercase border-b border-slate-800">
-                        <tr>
-                            <th class="p-4">Agent Name</th>
-                            <th class="p-4">Videos (5pt)</th>
-                            <th class="p-4">Camps (4pt)</th>
-                            <th class="p-4">FDB (3pt)</th>
-                            <th class="p-4">Achieved Points</th>
-                            <th class="p-4">Total Target</th>
-                            <th class="p-4">Productivity %</th>
-                            <th class="p-4">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="agentTableBody">
-                        <tr>
-                            <td colspan="8" class="text-center py-8 text-slate-500">
-                                No data available. Click 'Calculate' or fetch data from Google Sheets.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
         </div>
     </main>
 
-    <!-- JavaScript Logic -->
     <script>
-        lucide.createIcons();
+        let globalRawData = [];
 
-        function getAutoWorkingDays(startDateStr, endDateStr) {
-            let start = new Date(startDateStr);
-            let end = new Date(endDateStr);
+        // Helper function to force open calendar pop-up on click
+        function openPicker(inputId) {
+            const inputEl = document.getElementById(inputId);
+            if (inputEl && typeof inputEl.showPicker === 'function') {
+                inputEl.showPicker();
+            } else {
+                inputEl.focus();
+            }
+        }
+
+        // Fixed Local Timezone Working Days Calculation (Excluding Saturday & Sunday)
+        function calculateWorkingDays(startDateStr, endDateStr) {
+            if(!startDateStr || !endDateStr) return 0;
+            
+            let [sYear, sMonth, sDay] = startDateStr.split('-');
+            let [eYear, eMonth, eDay] = endDateStr.split('-');
+            
+            let start = new Date(sYear, sMonth - 1, sDay);
+            let end = new Date(eYear, eMonth - 1, eDay);
+            
+            if (start > end) return 0;
+
             let count = 0;
-            let cur = new Date(start);
+            let curDate = new Date(start);
 
-            while (cur <= end) {
-                const dayOfWeek = cur.getDay();
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) { 
+            while (curDate <= end) {
+                let dayOfWeek = curDate.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0 = Sunday, 6 = Saturday
                     count++;
                 }
-                cur.setDate(cur.getDate() + 1);
+                curDate.setDate(curDate.getDate() + 1);
             }
             return count;
         }
 
-        function calculateMetrics() {
-            const fromDate = document.getElementById('fromDate').value;
-            const toDate = document.getElementById('toDate').value;
-            const manualDaysInput = document.getElementById('manualDays').value;
-
-            let finalWorkingDays = 0;
-
-            if (manualDaysInput !== "" && !isNaN(manualDaysInput) && Number(manualDaysInput) >= 0) {
-                finalWorkingDays = parseInt(manualDaysInput, 10);
-                document.getElementById('workingDaysLabel').innerText = "Working Days (Manual Input)";
-            } else {
-                if (fromDate && toDate) {
-                    finalWorkingDays = getAutoWorkingDays(fromDate, toDate);
-                }
-                document.getElementById('workingDaysLabel').innerText = "Working Days (Excl. Sat/Sun)";
-            }
-
-            document.getElementById('cardWorkingDays').innerText = finalWorkingDays;
-            const targetPointsPerAgent = finalWorkingDays * 300;
-            document.getElementById('cardTargetPoints').innerText = targetPointsPerAgent;
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            if(el) el.classList.add('active');
         }
 
-        function resetFilters() {
-            document.getElementById('fromDate').value = '2026-05-21';
-            document.getElementById('toDate').value = '2026-06-15';
-            document.getElementById('manualDays').value = '';
-            document.getElementById('searchAgent').value = '';
-            calculateMetrics();
-        }
-
-        calculateMetrics();
-    </script>
-</body>
-</html>
+        async function fetchFromGoogleSheet() {
+            const btn = document.getElementById("gs-btn");
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching Data...';
+            
+            const sheetId = document.getElementById("gsheets-id").value;
+            const gid = document.getElementById("gsheets-gid").value;
+            
+            const targetCsvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid
