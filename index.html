@@ -64,7 +64,7 @@
     /* Executive Score Card Grid */
     .summary-cards { 
       display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); 
       gap: 14px; 
       margin-bottom: 30px; 
     }
@@ -177,6 +177,7 @@
   <div class="summary-cards" id="summaryCards">
     <div class="card"><h3>Total Agents</h3><p id="totAgents">0</p></div>
     <div class="card"><h3>Done Consultation</h3><p id="totDone">0</p></div>
+    <div class="card"><h3>Camp</h3><p id="totCamp">0</p></div>
     <div class="card"><h3>Clinic Video Call</h3><p id="totVideoCall">0</p></div>
     <div class="card"><h3>FDB</h3><p id="totFdb">0</p></div>
     <div class="card"><h3>Connected FDB</h3><p id="totConnFdb">0</p></div>
@@ -302,7 +303,7 @@
       const container = document.getElementById('teamsContainer');
       container.innerHTML = '';
 
-      let gTotAgents = 0, gTotDone = 0, gTotVideoCall = 0, 
+      let gTotAgents = 0, gTotDone = 0, gTotCamp = 0, gTotVideoCall = 0, 
           gTotFdb = 0, gTotConnFdb = 0, 
           gTotImmFdb = 0, gTotConnImmFdb = 0;
 
@@ -329,19 +330,24 @@
             fdb: 0, conn_fdb: 0, imm_fdb: 0, conn_imm_fdb: 0
           };
 
+          // Formula: Camp = Done Consultation - Clinic Video Call
+          const campVal = Math.max(0, s.done - s.videocall);
+
           gTotDone += s.done;
+          gTotCamp += campVal;
           gTotVideoCall += s.videocall;
           gTotFdb += s.fdb;
           gTotConnFdb += s.conn_fdb;
           gTotImmFdb += s.imm_fdb;
           gTotConnImmFdb += s.conn_imm_fdb;
 
-          const fmt = (val) => val === 0 ? `<span class="metric-zero">0</span>` : val;
+          const fmt = (val) => val <= 0 ? `<span class="metric-zero">0</span>` : val;
 
           tableRows += `
             <tr>
               <td class="agent-name">${member}</td>
               <td class="metric-val">${fmt(s.done)}</td>
+              <td class="metric-val">${fmt(campVal)}</td>
               <td class="metric-val">${fmt(s.videocall)}</td>
               <td class="metric-val">${fmt(s.fdb)}</td>
               <td class="metric-val">${fmt(s.conn_fdb)}</td>
@@ -360,6 +366,7 @@
                   <tr>
                     <th>Agent Name</th>
                     <th>Done Consultation</th>
+                    <th>Camp</th>
                     <th>Clinic Video Call</th>
                     <th>FDB</th>
                     <th>Connected FDB</th>
@@ -380,6 +387,7 @@
       // Update Upper Summary Cards
       document.getElementById('totAgents').innerText = gTotAgents;
       document.getElementById('totDone').innerText = gTotDone.toLocaleString();
+      document.getElementById('totCamp').innerText = gTotCamp.toLocaleString();
       document.getElementById('totVideoCall').innerText = gTotVideoCall.toLocaleString();
       document.getElementById('totFdb').innerText = gTotFdb.toLocaleString();
       document.getElementById('totConnFdb').innerText = gTotConnFdb.toLocaleString();
