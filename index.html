@@ -195,6 +195,7 @@
     
     .agent-name { font-weight: 800; color: #0f172a; text-align: left; padding-left: 15px; font-size: 15px; }
     .metric-val { text-align: center; font-size: 15px; color: #0f172a; font-weight: 900; }
+    .metric-target { text-align: center; font-size: 15px; color: #b45309; font-weight: 900; background-color: #fffbeb; }
     .metric-achieved { text-align: center; font-size: 15px; color: #166534; font-weight: 900; background-color: #f0fdf4; }
     .metric-prod { text-align: center; font-size: 15px; color: #0369a1; font-weight: 900; background-color: #f0f9ff; }
     .metric-zero { color: #64748b; font-weight: 700; }
@@ -235,7 +236,6 @@
   <div class="summary-cards" id="summaryCards">
     <div class="card"><h3>Total Agents</h3><p id="totAgents">0</p></div>
     <div class="card"><h3>Working Days</h3><p id="dispWorkingDays">1</p></div>
-    <div class="card highlight"><h3>Total Target</h3><p id="totTarget">0</p></div>
     <div class="card highlight"><h3>Achieved Target</h3><p id="totAchieved">0</p></div>
     <div class="card highlight"><h3>Overall Productivity %</h3><p id="totProd">0%</p></div>
     <div class="card"><h3>Done Consultation</h3><p id="totDone">0</p></div>
@@ -431,7 +431,6 @@
           const campVal = Math.max(0, s.done - s.videocall);
 
           // Achieved Target Calculation
-          // Clinic video call*5 + camp*4 + connected fdb*3 + connected imm*5
           const achievedVal = (s.videocall * 5) + (campVal * 4) + (s.conn_fdb * 3) + (s.conn_imm_fdb * 5);
           
           // Productivity %
@@ -458,6 +457,7 @@
               <td class="metric-val">${fmt(s.conn_fdb)}</td>
               <td class="metric-val">${fmt(s.imm_fdb)}</td>
               <td class="metric-val">${fmt(s.conn_imm_fdb)}</td>
+              <td class="metric-target">${targetPerAgent.toLocaleString()}</td>
               <td class="metric-achieved">${fmt(achievedVal)}</td>
               <td class="metric-prod">${prodVal.toFixed(1)}%</td>
             </tr>
@@ -479,6 +479,7 @@
                     <th>Connected FDB</th>
                     <th>IMM FDB</th>
                     <th>Connected IMM FDB</th>
+                    <th>Total Target</th>
                     <th>Achieved Target</th>
                     <th>Productivity %</th>
                   </tr>
@@ -500,7 +501,6 @@
       // Update Top Summary Cards
       document.getElementById('totAgents').innerText = gTotAgents;
       document.getElementById('dispWorkingDays').innerText = workingDays;
-      document.getElementById('totTarget').innerText = grandTotalTarget.toLocaleString();
       document.getElementById('totAchieved').innerText = gTotAchieved.toLocaleString();
       document.getElementById('totProd').innerText = overallProdPct.toFixed(1) + '%';
 
