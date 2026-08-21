@@ -1,456 +1,393 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Productivity Calculator</title>
-    <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Hourly Report - Unit 2</title>
+  <!-- SheetJS for Excel/CSV Parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-font-smoothing: antialiased; }
     
-    <!-- Dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    body { background-color: #f1f5f9; color: #0f172a; padding: 20px; }
     
-    <style>
-        :root {
-            --bg-dark: #0f172a;
-            --card-dark: #1e293b;
-            --border-color: #334155;
-            --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --accent-blue: #38bdf8;
-            --accent-green: #22c55e;
-            --accent-red: #ef4444;
-            --accent-purple: #a855f7;
-            --accent-orange: #f97316;
-            --accent-gold: #eab308;
-        }
+    /* Main Top Header Styling */
+    header { 
+      text-align: center; 
+      margin-bottom: 25px; 
+      padding: 24px 20px; 
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+      border-radius: 14px; 
+      border: 1px solid #334155; 
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25); 
+    }
+    h1 { 
+      color: #ffffff; 
+      font-size: 32px; 
+      font-weight: 900; 
+      letter-spacing: 1.5px; 
+      text-transform: uppercase; 
+      margin-bottom: 4px; 
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
+    }
+    
+    /* Subtitle Styling for UNIT 2 */
+    .header-subtitle {
+      color: #38bdf8;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    
+    .upload-container { display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap; }
+    input[type="file"] { display: none; }
+    .custom-file-upload { 
+      background: #2563eb; 
+      color: #ffffff; 
+      padding: 12px 28px; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      font-weight: 800; 
+      transition: all 0.2s ease; 
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4); 
+      text-transform: uppercase; 
+      font-size: 14px; 
+      letter-spacing: 0.8px; 
+      border: 1px solid #60a5fa; 
+    }
+    .custom-file-upload:hover { background: #1d4ed8; transform: translateY(-1px); }
+    .file-name { font-size: 14px; color: #cbd5e1; font-weight: 600; }
+    
+    /* Executive Score Card Grid */
+    .summary-cards { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+      gap: 14px; 
+      margin-bottom: 30px; 
+    }
+    
+    /* Uniform Dark Style For ALL Score Cards */
+    .card { 
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+      padding: 18px 12px; 
+      border-radius: 12px; 
+      border: 1px solid #0f172a; 
+      border-top: 5px solid #38bdf8; 
+      text-align: center; 
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.3); 
+      transition: transform 0.2s ease, box-shadow 0.2s ease; 
+    }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(15, 23, 42, 0.4); }
+    
+    .card h3 { 
+      font-size: 13px; 
+      color: #ffffff; 
+      text-transform: uppercase; 
+      margin-bottom: 10px; 
+      font-weight: 800; 
+      letter-spacing: 0.8px; 
+      line-height: 1.2;
+    }
+    .card p { 
+      font-size: 28px; 
+      font-weight: 900; 
+      color: #ffffff; 
+    }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body.dark-theme { background-color: var(--bg-dark); color: var(--text-main); display: flex; min-height: 100vh; }
-
-        /* Sidebar */
-        .sidebar { width: 260px; background-color: var(--card-dark); padding: 20px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; }
-        .brand { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; color: var(--accent-blue); margin-bottom: 25px; }
-        .brand h2 span { color: #fff; }
-        .nav-menu { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
-        .nav-item { color: var(--text-sub); text-decoration: none; padding: 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px; transition: 0.2s; font-size: 0.95rem; cursor: pointer; }
-        .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; }
-        .theme-toggle { display: flex; align-items: center; gap: 10px; color: var(--text-sub); justify-content: center; padding-top: 15px; border-top: 1px solid var(--border-color); }
-
-        /* Main Content */
-        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: var(--card-dark); padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 15px; }
-        .search-box { display: flex; align-items: center; gap: 10px; background: #0f172a; padding: 8px 15px; border-radius: 6px; border: 1px solid var(--border-color); width: 220px; }
-        .search-box input { background: transparent; border: none; color: #fff; outline: none; width: 100%; }
-        
-        .filter-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .date-input-group { display: flex; align-items: center; gap: 8px; background: #0f172a; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer; }
-        .date-input-group label { font-size: 0.8rem; color: var(--text-sub); font-weight: 500; cursor: pointer; }
-        
-        input[type="date"] { 
-            background: transparent; 
-            border: none; 
-            color: #fff; 
-            outline: none; 
-            font-size: 0.85rem; 
-            cursor: pointer;
-            color-scheme: dark;
-        }
-
-        input[type="text"], input[type="number"] { background: transparent; border: none; color: #fff; outline: none; font-size: 0.85rem; }
-
-        /* KPI Grid */
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .kpi-card { background: var(--card-dark); border: 1px solid var(--border-color); padding: 18px; border-radius: 12px; display: flex; align-items: center; gap: 15px; }
-        .kpi-card.highlight { border-color: var(--accent-blue); background: #1e293b; }
-        .kpi-icon { width: 45px; height: 45px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; background: #334155; }
-        .kpi-icon.blue { color: var(--accent-blue); }
-        .kpi-icon.purple { color: var(--accent-purple); }
-        .kpi-icon.teal { color: #14b8a6; }
-        .kpi-icon.orange { color: var(--accent-orange); }
-        .kpi-icon.green { color: var(--accent-green); }
-        .kpi-icon.gold { color: var(--accent-gold); }
-        .kpi-icon.red { color: var(--accent-red); }
-        .kpi-icon.main { color: #fff; background: var(--accent-blue); }
-        .kpi-info .title { font-size: 0.75rem; color: var(--text-sub); display: block; }
-        .kpi-info h3, .kpi-info h4 { font-size: 1.3rem; margin-top: 2px; }
-
-        /* Buttons & Layout */
-        .btn { padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; }
-        .btn-primary { background: var(--accent-blue); color: #0f172a; }
-        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
-        .btn-outline-gray { background: transparent; border: 1px solid var(--text-sub); color: var(--text-sub); }
-        
-        .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .card { background: var(--card-dark); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        .subtitle { font-size: 0.85rem; color: var(--text-sub); margin-top: 5px; margin-bottom: 15px; }
-
-        /* Table */
-        .card-table { background: var(--card-dark); border: 1px solid var(--border-color); border-radius: 12px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
-        th, td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); }
-        th { background: #0f172a; color: var(--text-sub); font-weight: 600; font-size: 0.8rem; }
-
-        /* Helpers */
-        .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-    </style>
+    /* Team Table Container */
+    .team-section { 
+      background: #ffffff; 
+      border-radius: 12px; 
+      border: 3px solid #334155; 
+      margin-bottom: 30px; 
+      overflow: hidden; 
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12); 
+    }
+    
+    /* Dark Slate Gradient Team Header Bar */
+    .team-header { 
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+      padding: 16px 20px; 
+      font-size: 22px; 
+      font-weight: 900; 
+      color: #ffffff; 
+      letter-spacing: 1px; 
+      border-bottom: 3px solid #334155; 
+      text-transform: uppercase; 
+    }
+    
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    
+    /* Dark Column Headers with Bigger Font & Darker Borders */
+    th { 
+      background-color: #0f172a; 
+      color: #ffffff; 
+      padding: 16px 12px; 
+      font-weight: 900; 
+      border-bottom: 3px solid #334155; 
+      border-right: 2.5px solid #334155; 
+      text-transform: uppercase; 
+      font-size: 14px; 
+      text-align: center; 
+      letter-spacing: 0.8px; 
+    }
+    th:first-child { text-align: left; padding-left: 20px; }
+    th:last-child { border-right: none; }
+    
+    /* Data Cells with Larger Font & Dark Solid Gridlines */
+    td { 
+      padding: 14px 12px; 
+      border-bottom: 2.5px solid #475569; 
+      border-right: 2.5px solid #475569; 
+      color: #0f172a; 
+      font-weight: 800; 
+      font-size: 16px; 
+    }
+    td:last-child { border-right: none; }
+    
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) { background-color: #f8fafc; }
+    tr:nth-child(odd) { background-color: #ffffff; }
+    tr:hover { background-color: #e0f2fe; }
+    
+    .agent-name { font-weight: 800; color: #0f172a; text-align: left; padding-left: 20px; font-size: 16px; }
+    .metric-val { text-align: center; font-size: 17px; color: #0f172a; font-weight: 900; }
+    .metric-zero { color: #64748b; font-weight: 700; }
+  </style>
 </head>
-<body class="dark-theme">
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-        <div>
-            <div class="brand">
-                <i class="fa-solid fa-chart-line logo-icon"></i>
-                <h2>Productivity <span>Calculator</span></h2>
-            </div>
-            <nav class="nav-menu">
-                <a class="nav-item active" onclick="switchTab(event, 'dashboard-tab', this)">
-                    <i class="fa-solid fa-house"></i> Dashboard
-                </a>
-                <a class="nav-item" onclick="switchTab(event, 'single-agent-tab', this)">
-                    <i class="fa-solid fa-user"></i> Single Agent
-                </a>
-                <a class="nav-item" onclick="switchTab(event, 'google-sheets-tab', this)">
-                    <i class="fa-solid fa-table"></i> Google Sheets
-                </a>
-                <a class="nav-item" onclick="switchTab(event, 'settings-tab', this)">
-                    <i class="fa-solid fa-gear"></i> Configuration
-                </a>
-            </nav>
-        </div>
-        <div class="theme-toggle">
-            <i class="fa-solid fa-moon" style="color:var(--accent-blue)"></i>
-            <span style="font-size:0.8rem">Dark Theme</span>
-        </div>
-    </aside>
+<body>
 
-    <!-- Main Content Area -->
-    <main class="main-content">
-        <!-- Top Bar with Interactive Date Range Filters -->
-        <header class="top-bar">
-            <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="agent-search" oninput="filterAgentTable()" placeholder="Search agent name...">
-            </div>
-            
-            <div class="filter-controls">
-                <div class="date-input-group" onclick="openPicker('start-date')">
-                    <label>From:</label>
-                    <input type="date" id="start-date" value="2026-05-21">
-                </div>
+  <header>
+    <h1>AGENT HOURLY REPORT</h1>
+    <div class="header-subtitle">UNIT 2</div>
+    <div class="upload-container">
+      <label for="fileInput" class="custom-file-upload">
+        📁 Upload Excel / CSV File
+      </label>
+      <input type="file" id="fileInput" accept=".csv, .xlsx, .xls">
+      <span class="file-name" id="fileName">No file chosen</span>
+    </div>
+  </header>
 
-                <div class="date-input-group" onclick="openPicker('end-date')">
-                    <label>To:</label>
-                    <input type="date" id="end-date" value="2026-06-15">
-                </div>
+  <!-- Top Summary Cards -->
+  <div class="summary-cards" id="summaryCards">
+    <div class="card"><h3>Total Agents</h3><p id="totAgents">0</p></div>
+    <div class="card"><h3>Done Consultation</h3><p id="totDone">0</p></div>
+    <div class="card"><h3>Clinic Video Call</h3><p id="totVideoCall">0</p></div>
+    <div class="card"><h3>FDB</h3><p id="totFdb">0</p></div>
+    <div class="card"><h3>Connected FDB</h3><p id="totConnFdb">0</p></div>
+    <div class="card"><h3>IMM FDB</h3><p id="totImmFdb">0</p></div>
+    <div class="card"><h3>Connected IMM FDB</h3><p id="totConnImmFdb">0</p></div>
+  </div>
 
-                <div class="date-input-group" title="Leave empty to use auto Mon-Fri calculation">
-                    <label>Manual Days:</label>
-                    <input type="number" id="manual-working-days" placeholder="Auto" min="0" style="width: 50px;">
-                </div>
+  <div id="teamsContainer"></div>
 
-                <button onclick="recalculateAndProcess()" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Calculate</button>
-                <button onclick="resetFilters()" class="btn btn-outline"><i class="fa-solid fa-rotate-left"></i> Reset</button>
-            </div>
-        </header>
+  <script>
+    const TEAMS = {
+      "TEAM JITENDRA": [
+        "Saurav Pal", "Md anas", "Renu Gupta", "Shivam verma", 
+        "Jogender singh", "Jayshree Choudhary", "Snigdha pal", 
+        "Rashi Gupta", "Kiran thakur"
+      ],
+      "TEAM DEEPTI": [
+        "Renu Rani", "Pooja Rathore", "ROSHNI PRAJAPATI", "GARVIT JHA", 
+        "Rajni Saini", "Puja Chauhan", "Shivansh tiwari", "Saifur Janam", 
+        "Anjali Gupta", "Roshni chouhan"
+      ],
+      "TEAM RAVI": [
+        "Jyoti Singh unit 2", "Rajendra Mourya", "Apurv Acharya", 
+        "Amit Sharma", "Atul Kumar", "Sumit H", "Piyush Verma", 
+        "Shivam Shukla"
+      ],
+      "TEAM SHIVAM": [
+        "Nandani", "Kamni Sharma", "Burhan", 
+        "Chandrabhanu", "Munsi Sakil Ahmed", "Ashish Yadav", "Chandrabhanu Sukla",
+        "MOHD SHAKIB", "Snehal Sukhadeo Gaikwad", "Abuzar Akhtar"
+      ],
+      "TEAM ISHANT": [
+        "Ayushi Saxena", "Harivansh Agarwal", 
+        "Smruti Rani Sahoo", "Sushma Chaudhary", "Ashok Pawar", 
+        "PRIYA PATIDAR", "YASHWANT SINGH", "Sanjana Khuswaha"
+      ]
+    };
 
-        <!-- Dynamic Tab Contents -->
-        <div class="content-wrapper">
-            
-            <!-- SECTION 1: DASHBOARD -->
-            <section id="dashboard-tab" class="tab-content active">
-                <div class="kpi-grid">
-                    <div class="kpi-card"><div class="kpi-icon blue"><i class="fa-solid fa-users"></i></div><div class="kpi-info"><span class="title">Total Agents</span><h3 id="kpi-agents">0</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon purple"><i class="fa-solid fa-calendar-day"></i></div><div class="kpi-info"><span class="title">Working Days (Excl. Sat/Sun)</span><h3 id="kpi-work-days">17</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon teal"><i class="fa-solid fa-video"></i></div><div class="kpi-info"><span class="title">Clinic Videos</span><h3 id="kpi-videos">0</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon orange"><i class="fa-solid fa-campground"></i></div><div class="kpi-info"><span class="title">Camp Cases</span><h3 id="kpi-camps">0</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon green"><i class="fa-solid fa-phone"></i></div><div class="kpi-info"><span class="title">Connected FDB</span><h3 id="kpi-fdb">0</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon gold"><i class="fa-solid fa-trophy"></i></div><div class="kpi-info"><span class="title">Achieved Points</span><h3 id="kpi-achieved">0</h3></div></div>
-                    <div class="kpi-card"><div class="kpi-icon red"><i class="fa-solid fa-bullseye"></i></div><div class="kpi-info"><span class="title">Target Points (Days × 300)</span><h3 id="kpi-target">0</h3></div></div>
-                    <div class="kpi-card highlight"><div class="kpi-icon main"><i class="fa-solid fa-gauge-high"></i></div><div class="kpi-info"><span class="title">Average Productivity</span><h3 id="kpi-productivity">0%</h3></div></div>
-                </div>
+    document.getElementById('fileInput').addEventListener('change', handleFile);
 
-                <div class="action-bar">
-                    <h3><i class="fa-solid fa-list-ol"></i> Agent Rankings & Productivity Summary</h3>
-                    <button onclick="window.print()" class="btn btn-outline-gray"><i class="fa-solid fa-print"></i> Print</button>
-                </div>
+    function handleFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      document.getElementById('fileName').innerText = file.name;
 
-                <div class="card-table">
-                    <table id="ranking-table">
-                        <thead>
-                            <tr>
-                                <th>Agent Name</th>
-                                <th>Videos (5pt)</th>
-                                <th>Camps (4pt)</th>
-                                <th>FDB (3pt)</th>
-                                <th>Achieved Points</th>
-                                <th>Total Target</th>
-                                <th>Productivity %</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ranking-tbody">
-                            <tr><td colspan="8" style="text-align:center; color: var(--text-sub);">No data available. Click 'Fetch Data Live' under Google Sheets tab.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+        processData(rawRows);
+      };
+      reader.readAsArrayBuffer(file);
+    }
 
-            <!-- SECTION 2: SINGLE AGENT CALCULATOR -->
-            <section id="single-agent-tab" class="tab-content">
-                <div class="grid-2col">
-                    <div class="card">
-                        <h3><i class="fa-solid fa-user-plus"></i> Single Agent Entry</h3>
-                        <br>
-                        <form id="single-agent-form" onsubmit="handleSingleAgentSubmit(event)">
-                            <div class="form-group" style="margin-bottom:12px;">
-                                <label>Agent Name *</label>
-                                <input type="text" id="sa-name" required placeholder="e.g. Saurav Pal" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
-                            </div>
-                            <div class="form-group" style="margin-bottom:12px;">
-                                <label>Clinic Video Call (5 pts)</label>
-                                <input type="number" id="sa-video" min="0" value="0" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
-                            </div>
-                            <div class="form-group" style="margin-bottom:12px;">
-                                <label>Camp Cases (4 pts)</label>
-                                <input type="number" id="sa-camp" min="0" value="0" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
-                            </div>
-                            <div class="form-group" style="margin-bottom:15px;">
-                                <label>Connected FDB (3 pts)</label>
-                                <input type="number" id="sa-fdb" min="0" value="0" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
-                            </div>
-                            <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fa-solid fa-plus"></i> Add Entry</button>
-                        </form>
-                    </div>
-                </div>
-            </section>
+    function cleanString(str) {
+      if (!str) return '';
+      return String(str).toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
 
-            <!-- SECTION 3: GOOGLE SHEETS INTEGRATION -->
-            <section id="google-sheets-tab" class="tab-content">
-                <div class="card">
-                    <h3><i class="fa-brands fa-google-drive"></i> Google Sheets Live Fetch</h3>
-                    <p class="subtitle">Direct live connection with Google Sheet performance tab.</p>
-                    <div class="form-group" style="margin-bottom:15px;">
-                        <label>Google Sheet ID</label>
-                        <input type="text" id="gsheets-id" value="17mZJcOCzSVJ_w7m_RGi51Jf1kOHPRMD-x99fOJ0KkfQ" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
-                    </div>
-                    <div class="form-group" style="margin-bottom:15px;">
-                        <label>Sheet Tab GID</label>
-                        <input type="text" id="gsheets-gid" value="531272320" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-top:5px;">
-                    </div>
-                    <button onclick="fetchFromGoogleSheet()" class="btn btn-primary" id="gs-btn"><i class="fa-solid fa-cloud-download"></i> Fetch Data Live</button>
-                </div>
-            </section>
+    function processData(rows) {
+      let headerRowIndex = -1;
+      let colMap = {};
 
-            <!-- SECTION 4: CONFIGURATION -->
-            <section id="settings-tab" class="tab-content">
-                <div class="card">
-                    <h3><i class="fa-solid fa-sliders"></i> Configuration & Point System</h3>
-                    <br>
-                    <ul style="list-style:none; line-height:2.2;">
-                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Clinic Video Call = <strong>5 Points</strong></li>
-                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Camp Case = <strong>4 Points</strong></li>
-                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Connected FDB = <strong>3 Points</strong></li>
-                        <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Target Rule = <strong>Working Days (Mon-Fri or Manual Input) × 300 Points</strong></li>
-                    </ul>
-                </div>
-            </section>
+      for (let i = 0; i < Math.min(20, rows.length); i++) {
+        const row = rows[i];
+        if (!row) continue;
+        
+        row.forEach((cell, colIdx) => {
+          const val = cleanString(cell);
+          if (val === 'agent' || val === 'agentname' || val === 'name') colMap['agent'] = colIdx;
+          if (val.includes('done')) colMap['done'] = colIdx;
+          if (val.includes('videocall') || val.includes('clinicvideo') || val === 'teledoc') colMap['videocall'] = colIdx;
+          
+          if (val === 'immfdb') colMap['imm_fdb'] = colIdx;
+          else if (val.includes('connectedimmfdb') || val.includes('connimm')) colMap['conn_imm_fdb'] = colIdx;
+          else if (val.includes('connectedfdb') || val.includes('connected')) colMap['conn_fdb'] = colIdx;
+          else if (val === 'fdb') colMap['fdb'] = colIdx;
+        });
 
-        </div>
-    </main>
-
-    <script>
-        let globalRawData = [];
-
-        function openPicker(inputId) {
-            const inputEl = document.getElementById(inputId);
-            if (inputEl && typeof inputEl.showPicker === 'function') {
-                inputEl.showPicker();
-            } else if (inputEl) {
-                inputEl.focus();
-            }
+        if (colMap['agent'] !== undefined) {
+          headerRowIndex = i;
+          break;
         }
+      }
 
-        function calculateWorkingDays(startDateStr, endDateStr) {
-            if(!startDateStr || !endDateStr) return 0;
-            
-            let [sYear, sMonth, sDay] = startDateStr.split('-');
-            let [eYear, eMonth, eDay] = endDateStr.split('-');
-            
-            let start = new Date(sYear, sMonth - 1, sDay);
-            let end = new Date(eYear, eMonth - 1, eDay);
-            
-            if (start > end) return 0;
+      if (headerRowIndex === -1) {
+        alert("Could not find 'Agent' column in the uploaded sheet.");
+        return;
+      }
 
-            let count = 0;
-            let curDate = new Date(start);
+      const agentStatsMap = {};
 
-            while (curDate <= end) {
-                let dayOfWeek = curDate.getDay();
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                    count++;
-                }
-                curDate.setDate(curDate.getDate() + 1);
-            }
-            return count;
-        }
+      for (let i = headerRowIndex + 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || !row[colMap['agent']]) continue;
 
-        function switchTab(e, tabId, el) {
-            if(e) e.preventDefault();
-            
-            // Switch tabs visually
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            
-            const targetTab = document.getElementById(tabId);
-            if(targetTab) targetTab.classList.add('active');
-            if(el) el.classList.add('active');
-        }
+        const rawName = String(row[colMap['agent']]).trim();
+        const cleanName = cleanString(rawName);
 
-        async function fetchFromGoogleSheet() {
-            const btn = document.getElementById("gs-btn");
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching Data...';
-            
-            const sheetId = document.getElementById("gsheets-id").value;
-            const gid = document.getElementById("gsheets-gid").value;
-            
-            const targetCsvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
-            const proxyUrl = `https://api.corsproxy.io/?` + encodeURIComponent(targetCsvUrl);
+        const getNum = (colKey) => {
+          if (colMap[colKey] === undefined) return 0;
+          const val = parseFloat(row[colMap[colKey]]);
+          return isNaN(val) ? 0 : val;
+        };
 
-            try {
-                let res = await fetch(proxyUrl);
-                if (!res.ok) res = await fetch(targetCsvUrl);
-                const csvText = await res.text();
-                
-                Papa.parse(csvText, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: (results) => {
-                        globalRawData = results.data;
-                        processRawData(globalRawData);
-                        btn.innerHTML = '<i class="fa-solid fa-check"></i> Connected & Sync Completed!';
-                        setTimeout(() => { 
-                            switchTab(null, 'dashboard-tab', document.querySelectorAll('.nav-item')[0]); 
-                        }, 800);
-                    }
-                });
-            } catch(e) {
-                alert("Connection failed! Make sure Google Sheet is public.");
-                btn.innerHTML = '<i class="fa-solid fa-cloud-download"></i> Retry Sync';
-            }
-        }
+        agentStatsMap[cleanName] = {
+          displayName: rawName,
+          done: getNum('done'),
+          videocall: getNum('videocall'),
+          fdb: getNum('fdb'),
+          conn_fdb: getNum('conn_fdb'),
+          imm_fdb: getNum('imm_fdb'),
+          conn_imm_fdb: getNum('conn_imm_fdb')
+        };
+      }
 
-        function handleSingleAgentSubmit(e) {
-            e.preventDefault();
-            const name = document.getElementById("sa-name").value;
-            const video = parseInt(document.getElementById("sa-video").value) || 0;
-            const camp = parseInt(document.getElementById("sa-camp").value) || 0;
-            const fdb = parseInt(document.getElementById("sa-fdb").value) || 0;
+      renderDashboard(agentStatsMap);
+    }
 
-            globalRawData.push({
-                "Agent": name,
-                "Clinic Video Call": video,
-                "CAMP": camp,
-                "Connected Fdb": fdb
+    function renderDashboard(agentStatsMap) {
+      const container = document.getElementById('teamsContainer');
+      container.innerHTML = '';
+
+      let gTotAgents = 0, gTotDone = 0, gTotVideoCall = 0, 
+          gTotFdb = 0, gTotConnFdb = 0, 
+          gTotImmFdb = 0, gTotConnImmFdb = 0;
+
+      Object.keys(TEAMS).forEach(teamName => {
+        const members = TEAMS[teamName];
+        let tableRows = '';
+
+        members.forEach(member => {
+          gTotAgents++;
+          const cleanMem = cleanString(member);
+          let stats = agentStatsMap[cleanMem];
+
+          if (!stats) {
+            const key = Object.keys(agentStatsMap).find(k => {
+              const cleanMemAlt = cleanMem.replace('saurabh', 'saurav');
+              const kAlt = k.replace('saurabh', 'saurav');
+              return k.includes(cleanMem) || cleanMem.includes(k) || kAlt.includes(cleanMemAlt) || cleanMemAlt.includes(kAlt);
             });
+            if (key) stats = agentStatsMap[key];
+          }
 
-            processRawData(globalRawData);
-            alert("Entry added successfully!");
-            switchTab(null, 'dashboard-tab', document.querySelectorAll('.nav-item')[0]);
-        }
+          const s = stats || {
+            done: 0, videocall: 0, 
+            fdb: 0, conn_fdb: 0, imm_fdb: 0, conn_imm_fdb: 0
+          };
 
-        function recalculateAndProcess() {
-            processRawData(globalRawData);
-        }
+          gTotDone += s.done;
+          gTotVideoCall += s.videocall;
+          gTotFdb += s.fdb;
+          gTotConnFdb += s.conn_fdb;
+          gTotImmFdb += s.imm_fdb;
+          gTotConnImmFdb += s.conn_imm_fdb;
 
-        function processRawData(rows) {
-            const tbody = document.getElementById("ranking-tbody");
-            if(!tbody) return;
-            
-            tbody.innerHTML = "";
+          const fmt = (val) => val === 0 ? `<span class="metric-zero">0</span>` : val;
 
-            const startDate = document.getElementById("start-date") ? document.getElementById("start-date").value : "";
-            const endDate = document.getElementById("end-date") ? document.getElementById("end-date").value : "";
-            const manualDaysInput = document.getElementById("manual-working-days") ? document.getElementById("manual-working-days").value : "";
-            
-            let workingDays = 0;
-            if (manualDaysInput !== "" && !isNaN(manualDaysInput) && parseInt(manualDaysInput) >= 0) {
-                workingDays = parseInt(manualDaysInput);
-            } else {
-                workingDays = calculateWorkingDays(startDate, endDate);
-            }
-            
-            const targetPerAgent = workingDays * 300;
+          tableRows += `
+            <tr>
+              <td class="agent-name">${member}</td>
+              <td class="metric-val">${fmt(s.done)}</td>
+              <td class="metric-val">${fmt(s.videocall)}</td>
+              <td class="metric-val">${fmt(s.fdb)}</td>
+              <td class="metric-val">${fmt(s.conn_fdb)}</td>
+              <td class="metric-val">${fmt(s.imm_fdb)}</td>
+              <td class="metric-val">${fmt(s.conn_imm_fdb)}</td>
+            </tr>
+          `;
+        });
 
-            let totalAgents = 0, totalVid = 0, totalCamp = 0, totalFdb = 0, totalAchieved = 0;
-            let sumProductivity = 0;
+        const teamHtml = `
+          <div class="team-section">
+            <div class="team-header">${teamName}</div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Agent Name</th>
+                    <th>Done Consultation</th>
+                    <th>Clinic Video Call</th>
+                    <th>FDB</th>
+                    <th>Connected FDB</th>
+                    <th>IMM FDB</th>
+                    <th>Connected IMM FDB</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tableRows}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+        container.innerHTML += teamHtml;
+      });
 
-            rows.forEach(row => {
-                const agent = row["Agent"] || row["Agent Name"] || row["AGENT"] || "";
-                if(agent.trim() !== "") {
-                    totalAgents++;
-                    const video = parseInt(row["Clinic Video Call"] || row["Clinic Video"] || row["Video"] || 0) || 0;
-                    const camp = parseInt(row["CAMP"] || row["Camp Cases"] || row["Camp"] || 0) || 0;
-                    const fdb = parseInt(row["Connected Fdb"] || row["Connected FDB"] || row["Fdb"] || 0) || 0;
+      // Update Upper Summary Cards
+      document.getElementById('totAgents').innerText = gTotAgents;
+      document.getElementById('totDone').innerText = gTotDone.toLocaleString();
+      document.getElementById('totVideoCall').innerText = gTotVideoCall.toLocaleString();
+      document.getElementById('totFdb').innerText = gTotFdb.toLocaleString();
+      document.getElementById('totConnFdb').innerText = gTotConnFdb.toLocaleString();
+      document.getElementById('totImmFdb').innerText = gTotImmFdb.toLocaleString();
+      document.getElementById('totConnImmFdb').innerText = gTotConnImmFdb.toLocaleString();
+    }
 
-                    totalVid += video; totalCamp += camp; totalFdb += fdb;
-
-                    const achieved = (video * 5) + (camp * 4) + (fdb * 3);
-                    totalAchieved += achieved;
-
-                    const prod = targetPerAgent > 0 ? Math.round((achieved / targetPerAgent) * 100) : 0;
-                    sumProductivity += prod;
-
-                    const statusHTML = prod >= 100 ? `<span style="color:var(--accent-green); font-weight:600;">Achieved</span>` : `<span style="color:var(--accent-red); font-weight:600;">Pending</span>`;
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${agent}</strong></td>
-                            <td>${video}</td>
-                            <td>${camp}</td>
-                            <td>${fdb}</td>
-                            <td><strong style="color:var(--accent-gold);">${achieved}</strong></td>
-                            <td>${targetPerAgent}</td>
-                            <td><strong style="color:${prod>=100?'var(--accent-green)':'var(--accent-red)'}">${prod}%</strong></td>
-                            <td>${statusHTML}</td>
-                        </tr>
-                    `;
-                }
-            });
-
-            if(document.getElementById("kpi-agents")) document.getElementById("kpi-agents").innerText = totalAgents;
-            if(document.getElementById("kpi-work-days")) document.getElementById("kpi-work-days").innerText = workingDays;
-            if(document.getElementById("kpi-videos")) document.getElementById("kpi-videos").innerText = totalVid;
-            if(document.getElementById("kpi-camps")) document.getElementById("kpi-camps").innerText = totalCamp;
-            if(document.getElementById("kpi-fdb")) document.getElementById("kpi-fdb").innerText = totalFdb;
-            if(document.getElementById("kpi-achieved")) document.getElementById("kpi-achieved").innerText = totalAchieved;
-            if(document.getElementById("kpi-target")) document.getElementById("kpi-target").innerText = targetPerAgent;
-            
-            const avgProductivity = totalAgents > 0 ? Math.round(sumProductivity / totalAgents) : 0;
-            if(document.getElementById("kpi-productivity")) document.getElementById("kpi-productivity").innerText = avgProductivity + "%";
-        }
-
-        function filterAgentTable() {
-            const query = document.getElementById("agent-search").value.toLowerCase();
-            const rows = document.querySelectorAll("#ranking-tbody tr");
-            rows.forEach(row => {
-                const text = row.innerText.toLowerCase();
-                row.style.display = text.includes(query) ? "" : "none";
-            });
-        }
-
-        function resetFilters() {
-            if(document.getElementById("agent-search")) document.getElementById("agent-search").value = "";
-            if(document.getElementById("start-date")) document.getElementById("start-date").value = "2026-05-21";
-            if(document.getElementById("end-date")) document.getElementById("end-date").value = "2026-06-15";
-            if(document.getElementById("manual-working-days")) document.getElementById("manual-working-days").value = "";
-            processRawData(globalRawData);
-        }
-    </script>
+    renderDashboard({});
+  </script>
 </body>
 </html>
