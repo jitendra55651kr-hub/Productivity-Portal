@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Productivity Report - Unit 2</title>
-  <!-- SheetJS for Excel/CSV Parsing -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
@@ -273,7 +272,6 @@
     <h1><span class="title-icon">📈</span> PRODUCTIVITY REPORT</h1>
     <div class="header-subtitle">UNIT 2</div>
     
-    <!-- Controls Bar -->
     <div class="controls-container">
       <div class="control-group">
         <label>📅 Start Date:</label>
@@ -298,7 +296,6 @@
     </div>
   </header>
 
-  <!-- Team Productivity Summary Cards -->
   <div class="summary-cards" id="summaryCards">
     <div class="card"><h3>👥 Total Agents</h3><p id="totAgents">0</p></div>
     <div class="card"><h3>📆 Working Days</h3><p id="dispWorkingDays">1</p></div>
@@ -330,9 +327,9 @@
         "Shivam Shukla", "Hitesh Kumar", "Samirun Nisha", "Abuzar Akhtar"
       ],
       "TEAM SHIVAM": [
-        "Nandani", "Burhan", 
+        "Kamni Muthoot", "Nandani", "Burhan", 
         "Chandrabhanu", "Munsi Sakil Ahmed", "Ashish Yadav", "Chandrabhanu Sukla",
-        "MOHD SHAKIB", "Snehal Sukhadeo Gaikwad", "Abuzar Akhtar", "ANKUR KUMAR", "Kamni Muthoot"
+        "MOHD SHAKIB", "Snehal Sukhadeo Gaikwad", "Abuzar Akhtar", "ANKUR KUMAR"
       ],
       "TEAM ISHANT": [
         "Isha mehta", "Ayushi Saxena", "Harivansh Agarwal", 
@@ -440,140 +437,3 @@
           const val = parseFloat(row[colMap[colKey]]);
           return isNaN(val) ? 0 : val;
         };
-
-        agentStatsMap[cleanName] = {
-          displayName: rawName,
-          done: getNum('done'),
-          videocall: getNum('videocall'),
-          fdb: getNum('fdb'),
-          conn_fdb: getNum('conn_fdb'),
-          imm_fdb: getNum('imm_fdb'),
-          conn_imm_fdb: getNum('conn_imm_fdb')
-        };
-      }
-
-      latestParsedMap = agentStatsMap;
-      renderDashboard(agentStatsMap);
-    }
-
-    function renderDashboard(agentStatsMap) {
-      const container = document.getElementById('teamsContainer');
-      container.innerHTML = '';
-
-      const workingDays = parseFloat(document.getElementById('workingDays').value) || 1;
-      const targetPerAgent = workingDays * 300;
-
-      let gTotAgents = 0, gTotAchieved = 0;
-      const teamProdResults = {};
-
-      Object.keys(TEAMS).forEach(teamName => {
-        const members = TEAMS[teamName];
-        let tableRows = '';
-        let teamAchieved = 0;
-        let teamAgentCount = members.length;
-
-        members.forEach(member => {
-          gTotAgents++;
-          const cleanMem = cleanString(member);
-          let stats = agentStatsMap[cleanMem];
-
-          if (!stats) {
-            const key = Object.keys(agentStatsMap).find(k => {
-              const cleanMemAlt = cleanMem.replace('saurabh', 'saurav');
-              const kAlt = k.replace('saurabh', 'saurav');
-              return k.includes(cleanMem) || cleanMem.includes(k) || kAlt.includes(cleanMemAlt) || cleanMemAlt.includes(kAlt);
-            });
-            if (key) stats = agentStatsMap[key];
-          }
-
-          const s = stats || {
-            done: 0, videocall: 0, 
-            fdb: 0, conn_fdb: 0, imm_fdb: 0, conn_imm_fdb: 0
-          };
-
-          const campVal = Math.max(0, s.done - s.videocall);
-
-          // Achieved Target Calculation
-          const achievedVal = (s.videocall * 5) + (campVal * 4) + (s.conn_fdb * 3) + (s.conn_imm_fdb * 5);
-          
-          // Productivity %
-          const prodVal = targetPerAgent > 0 ? ((achievedVal / targetPerAgent) * 100) : 0;
-
-          teamAchieved += achievedVal;
-          gTotAchieved += achievedVal;
-
-          const fmt = (val) => val <= 0 ? `<span class="metric-zero">0</span>` : val;
-
-          tableRows += `
-            <tr>
-              <td class="agent-name">${member}</td>
-              <td class="metric-val">${fmt(s.done)}</td>
-              <td class="metric-val">${fmt(campVal)}</td>
-              <td class="metric-val">${fmt(s.videocall)}</td>
-              <td class="metric-val">${fmt(s.fdb)}</td>
-              <td class="metric-val">${fmt(s.conn_fdb)}</td>
-              <td class="metric-val">${fmt(s.imm_fdb)}</td>
-              <td class="metric-val">${fmt(s.conn_imm_fdb)}</td>
-              <td class="metric-target">${targetPerAgent.toLocaleString()}</td>
-              <td class="metric-achieved">${fmt(achievedVal)}</td>
-              <td class="metric-prod">${prodVal.toFixed(1)}%</td>
-            </tr>
-          `;
-        });
-
-        // Team-level productivity calculation
-        const teamTotalTarget = teamAgentCount * targetPerAgent;
-        const teamProdPct = teamTotalTarget > 0 ? ((teamAchieved / teamTotalTarget) * 100) : 0;
-        teamProdResults[teamName] = teamProdPct.toFixed(1) + '%';
-
-        const teamHtml = `
-          <div class="team-section">
-            <div class="team-header">📊 ${teamName}</div>
-            <div class="table-responsive">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Agent Name</th>
-                    <th>Done Consultation</th>
-                    <th>Camp</th>
-                    <th>Clinic Video Call</th>
-                    <th>FDB</th>
-                    <th>Connected FDB</th>
-                    <th>IMM FDB</th>
-                    <th>Connected IMM FDB</th>
-                    <th>Total Target</th>
-                    <th>Achieved Target</th>
-                    <th>Productivity %</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${tableRows}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        `;
-        container.innerHTML += teamHtml;
-      });
-
-      // Executive Totals Calculation
-      const grandTotalTarget = gTotAgents * targetPerAgent;
-      const overallProdPct = grandTotalTarget > 0 ? ((gTotAchieved / grandTotalTarget) * 100) : 0;
-
-      // Update Top Summary Cards
-      document.getElementById('totAgents').innerText = gTotAgents;
-      document.getElementById('dispWorkingDays').innerText = workingDays;
-      document.getElementById('totProd').innerText = overallProdPct.toFixed(1) + '%';
-
-      // Update Team Wise Productivity Cards
-      document.getElementById('prodJitendra').innerText = teamProdResults["TEAM JITENDRA"] || "0%";
-      document.getElementById('prodDeepti').innerText = teamProdResults["TEAM DEEPTI"] || "0%";
-      document.getElementById('prodRavi').innerText = teamProdResults["TEAM RAVI"] || "0%";
-      document.getElementById('prodShivam').innerText = teamProdResults["TEAM SHIVAM"] || "0%";
-      document.getElementById('prodIshant').innerText = teamProdResults["TEAM ISHANT"] || "0%";
-    }
-
-    renderDashboard({});
-  </script>
-</body>
-</html>
