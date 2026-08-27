@@ -324,32 +324,11 @@
     .metric-prod { text-align: center; font-size: 14px; color: #0369a1; font-weight: 900; background-color: #e0f2fe; }
     .metric-zero { color: #94a3b8; font-weight: 700; }
 
-    /* Performance Badges */
-    .badge-top {
-      background: #fef3c7;
-      color: #92400e;
-      border: 1px solid #f59e0b;
-      padding: 2px 6px;
-      border-radius: 6px;
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: 0.5px;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-    }
-    .badge-low {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #f87171;
-      padding: 2px 6px;
-      border-radius: 6px;
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: 0.5px;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
+    /* Performance Icons */
+    .perf-icon {
+      font-size: 16px;
+      line-height: 1;
+      display: inline-block;
     }
   </style>
 </head>
@@ -626,16 +605,16 @@
         agentsGroup.sort((a, b) => b.achievedVal - a.achievedVal);
         pharmGroup.sort((a, b) => b.achievedVal - a.achievedVal);
 
-        // Tag Top / Low Performers in Agents
+        // Tag Top 2 / Low 2 in Agents
         agentsGroup.forEach((m, idx) => {
-          if (idx < 2) m.tag = 'top-agent';
+          if (idx < 2) m.tag = 'top';
           else if (idx >= agentsGroup.length - 2) m.tag = 'low';
           else m.tag = 'normal';
         });
 
-        // Tag Top / Low Performers in Pharmacists
+        // Tag Top 2 / Low 2 in Pharmacists
         pharmGroup.forEach((m, idx) => {
-          if (idx === 0 && m.achievedVal > 0) m.tag = 'top-pharm';
+          if (idx < 2 && m.achievedVal > 0) m.tag = 'top';
           else if (idx >= pharmGroup.length - 2) m.tag = 'low';
           else m.tag = 'normal';
         });
@@ -660,14 +639,12 @@
             pharmAchieved += item.achievedVal;
           }
 
-          // Generate Badges/Icons
-          let nameBadgeHtml = '';
-          if (item.tag === 'top-agent') {
-            nameBadgeHtml = `<span class="badge-top">🏆 TOP AGENT</span>`;
-          } else if (item.tag === 'top-pharm') {
-            nameBadgeHtml = `<span class="badge-top">⭐ TOP PHARM</span>`;
+          // Generate Icons (without text badges)
+          let iconHtml = '';
+          if (item.tag === 'top') {
+            iconHtml = `<span class="perf-icon" title="Top Performer">🏆</span>`;
           } else if (item.tag === 'low') {
-            nameBadgeHtml = `<span class="badge-low">🔻 LOW PROD</span>`;
+            iconHtml = `<span class="perf-icon" title="Low Productivity">🔻</span>`;
           }
 
           const fmt = (val) => val <= 0 ? `<span class="metric-zero">0</span>` : val;
@@ -676,7 +653,7 @@
             <tr>
               <td class="agent-name">
                 <span>${member}</span>
-                ${nameBadgeHtml}
+                ${iconHtml}
               </td>
               <td class="metric-val">${fmt(s.done)}</td>
               <td class="metric-val">${fmt(item.campVal)}</td>
