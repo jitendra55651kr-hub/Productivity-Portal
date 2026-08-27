@@ -191,7 +191,6 @@
 
     .card.team-card { border-top-color: #f59e0b; padding: 14px 10px; }
     
-    /* Sub-boxes inside Team Card */
     .split-metrics {
       display: flex;
       gap: 8px;
@@ -230,7 +229,7 @@
     
     .team-header { 
       background: linear-gradient(135deg, #022c22 0%, #064e3b 100%); 
-      padding: 16px 22px; 
+      padding: 14px 22px; 
       font-size: 18px; 
       font-weight: 900; 
       color: #ffffff; 
@@ -239,7 +238,41 @@
       text-transform: uppercase; 
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .team-header-title {
+      display: flex;
+      align-items: center;
       gap: 10px;
+    }
+
+    .team-header-averages {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-avg-badge {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #ecfdf5;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .header-avg-badge .highlight-val {
+      color: #34d399;
+      font-size: 14px;
+      font-weight: 900;
     }
     
     .table-responsive { overflow-x: auto; }
@@ -275,12 +308,49 @@
     tr:nth-child(odd) { background-color: #ffffff; }
     tr:hover { background-color: #dcfce7; }
     
-    .agent-name { font-weight: 800; color: #064e3b; text-align: left; padding-left: 18px; font-size: 14px; }
+    .agent-name { 
+      font-weight: 800; 
+      color: #064e3b; 
+      text-align: left; 
+      padding-left: 18px; 
+      font-size: 14px; 
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
     .metric-val { text-align: center; font-size: 14px; color: #1e293b; font-weight: 800; }
     .metric-target { text-align: center; font-size: 14px; color: #92400e; font-weight: 800; background-color: #fef3c7; }
     .metric-achieved { text-align: center; font-size: 14px; color: #065f46; font-weight: 900; background-color: #d1fae5; }
     .metric-prod { text-align: center; font-size: 14px; color: #0369a1; font-weight: 900; background-color: #e0f2fe; }
     .metric-zero { color: #94a3b8; font-weight: 700; }
+
+    /* Performance Badges */
+    .badge-top {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #f59e0b;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .badge-low {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #f87171;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
   </style>
 </head>
 <body>
@@ -318,7 +388,6 @@
     <div class="card"><h3>📆 Working Days</h3><p id="dispWorkingDays">1</p></div>
     <div class="card highlight"><h3>🚀 Overall Prod %</h3><p id="totProd">0%</p></div>
     
-    <!-- Team Cards with 2 Sub-Boxes Each -->
     <div class="card team-card">
       <h3>🛡️ Team Jitendra</h3>
       <div class="split-metrics">
@@ -518,7 +587,7 @@
       Object.keys(TEAMS).forEach(teamName => {
         const rawMembers = TEAMS[teamName];
 
-        let sortedMembers = rawMembers.map(member => {
+        let membersList = rawMembers.map(member => {
           const cleanMem = cleanString(member);
           let stats = agentStatsMap[cleanMem];
 
@@ -536,70 +605,89 @@
             fdb: 0, conn_fdb: 0, imm_fdb: 0, conn_imm_fdb: 0
           };
 
+          const campVal = Math.max(0, s.done - s.videocall);
+          const achievedVal = (s.videocall * 5) + (campVal * 4) + (s.conn_fdb * 3) + (s.conn_imm_fdb * 5);
+          const prodVal = targetPerAgent > 0 ? ((achievedVal / targetPerAgent) * 100) : 0;
+
           return {
             name: member,
-            stats: s
+            stats: s,
+            campVal: campVal,
+            achievedVal: achievedVal,
+            prodVal: prodVal
           };
         });
 
-        // Strict & Accurate Sorting Logic
-        sortedMembers.sort((a, b) => {
-          const isAgentA = a.stats.done > 0;
-          const isAgentB = b.stats.done > 0;
+        // Separate Agents & Pharmacists
+        const agentsGroup = membersList.filter(m => m.stats.done > 0);
+        const pharmGroup = membersList.filter(m => m.stats.done === 0);
 
-          if (isAgentA && !isAgentB) return -1;
-          if (!isAgentA && isAgentB) return 1;
+        // Sort Groups by Achieved Target
+        agentsGroup.sort((a, b) => b.achievedVal - a.achievedVal);
+        pharmGroup.sort((a, b) => b.achievedVal - a.achievedVal);
 
-          if (isAgentA && isAgentB) {
-            return b.stats.done - a.stats.done;
-          }
-
-          if (b.stats.conn_imm_fdb !== a.stats.conn_imm_fdb) {
-            return b.stats.conn_imm_fdb - a.stats.conn_imm_fdb;
-          }
-          return b.stats.imm_fdb - a.stats.imm_fdb;
+        // Tag Top / Low Performers in Agents
+        agentsGroup.forEach((m, idx) => {
+          if (idx < 2) m.tag = 'top-agent';
+          else if (idx >= agentsGroup.length - 2) m.tag = 'low';
+          else m.tag = 'normal';
         });
 
+        // Tag Top / Low Performers in Pharmacists
+        pharmGroup.forEach((m, idx) => {
+          if (idx === 0 && m.achievedVal > 0) m.tag = 'top-pharm';
+          else if (idx >= pharmGroup.length - 2) m.tag = 'low';
+          else m.tag = 'normal';
+        });
+
+        // Combine for table rendering (Agents on top, Pharmacists below)
+        const sortedMembers = [...agentsGroup, ...pharmGroup];
+
         let tableRows = '';
-        
-        // Split calculations per team
-        let agentAchieved = 0, agentCount = 0;
-        let pharmAchieved = 0, pharmCount = 0;
+        let agentAchieved = 0, agentCount = agentsGroup.length;
+        let pharmAchieved = 0, pharmCount = pharmGroup.length;
 
         sortedMembers.forEach(item => {
           const member = item.name;
           const s = item.stats;
           gTotAgents++;
 
-          const campVal = Math.max(0, s.done - s.videocall);
-          const achievedVal = (s.videocall * 5) + (campVal * 4) + (s.conn_fdb * 3) + (s.conn_imm_fdb * 5);
-          const prodVal = targetPerAgent > 0 ? ((achievedVal / targetPerAgent) * 100) : 0;
-
-          gTotAchieved += achievedVal;
+          gTotAchieved += item.achievedVal;
 
           if (s.done > 0) {
-            agentAchieved += achievedVal;
-            agentCount++;
+            agentAchieved += item.achievedVal;
           } else {
-            pharmAchieved += achievedVal;
-            pharmCount++;
+            pharmAchieved += item.achievedVal;
+          }
+
+          // Generate Badges/Icons
+          let nameBadgeHtml = '';
+          if (item.tag === 'top-agent') {
+            nameBadgeHtml = `<span class="badge-top">🏆 TOP AGENT</span>`;
+          } else if (item.tag === 'top-pharm') {
+            nameBadgeHtml = `<span class="badge-top">⭐ TOP PHARM</span>`;
+          } else if (item.tag === 'low') {
+            nameBadgeHtml = `<span class="badge-low">🔻 LOW PROD</span>`;
           }
 
           const fmt = (val) => val <= 0 ? `<span class="metric-zero">0</span>` : val;
 
           tableRows += `
             <tr>
-              <td class="agent-name">${member}</td>
+              <td class="agent-name">
+                <span>${member}</span>
+                ${nameBadgeHtml}
+              </td>
               <td class="metric-val">${fmt(s.done)}</td>
-              <td class="metric-val">${fmt(campVal)}</td>
+              <td class="metric-val">${fmt(item.campVal)}</td>
               <td class="metric-val">${fmt(s.videocall)}</td>
               <td class="metric-val">${fmt(s.fdb)}</td>
               <td class="metric-val">${fmt(s.conn_fdb)}</td>
               <td class="metric-val">${fmt(s.imm_fdb)}</td>
               <td class="metric-val">${fmt(s.conn_imm_fdb)}</td>
               <td class="metric-target">${targetPerAgent.toLocaleString()}</td>
-              <td class="metric-achieved">${fmt(achievedVal)}</td>
-              <td class="metric-prod">${prodVal.toFixed(1)}%</td>
+              <td class="metric-achieved">${fmt(item.achievedVal)}</td>
+              <td class="metric-prod">${item.prodVal.toFixed(1)}%</td>
             </tr>
           `;
         });
@@ -614,7 +702,19 @@
 
         const teamHtml = `
           <div class="team-section">
-            <div class="team-header">📊 ${teamName}</div>
+            <div class="team-header">
+              <div class="team-header-title">📊 ${teamName}</div>
+              <div class="team-header-averages">
+                <div class="header-avg-badge">
+                  <span>AGENT AVG:</span>
+                  <span class="highlight-val">${agentAvgPct}</span>
+                </div>
+                <div class="header-avg-badge">
+                  <span>PHARM AVG:</span>
+                  <span class="highlight-val">${pharmAvgPct}</span>
+                </div>
+              </div>
+            </div>
             <div class="table-responsive">
               <table>
                 <thead>
@@ -649,7 +749,7 @@
       document.getElementById('dispWorkingDays').innerText = workingDays;
       document.getElementById('totProd').innerText = overallProdPct.toFixed(1) + '%';
 
-      // Update Split Values into UI Cards
+      // Update Summary Cards
       const mapKeyToId = {
         "TEAM JITENDRA": ["jitendraAgent", "jitendraPharm"],
         "TEAM DEEPTI": ["deeptiAgent", "deeptiPharm"],
