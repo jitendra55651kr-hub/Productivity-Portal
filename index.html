@@ -342,7 +342,6 @@
 
     document.getElementById('fileInput').addEventListener('change', handleFile);
 
-    // Dynamic Working Days Calculation excluding Sat & Sun
     function calculateWorkingDays(startDateStr, endDateStr) {
       if (!startDateStr || !endDateStr) return 1;
       let start = new Date(startDateStr);
@@ -352,7 +351,7 @@
       let count = 0;
       let cur = new Date(start);
       while (cur <= end) {
-        let dayOfWeek = cur.getDay(); // 0: Sun, 6: Sat
+        let dayOfWeek = cur.getDay();
         if (dayOfWeek !== 0 && dayOfWeek !== 6) {
           count++;
         }
@@ -464,13 +463,10 @@
       const teamProdResults = {};
 
       Object.keys(TEAMS).forEach(teamName => {
-        const members = TEAMS[teamName];
-        let tableRows = '';
-        let teamAchieved = 0;
-        let teamAgentCount = members.length;
+        const rawMembers = TEAMS[teamName];
 
-        members.forEach(member => {
-          gTotAgents++;
+        // Prepare extended agent data for sorting
+        let sortedMembers = rawMembers.map(member => {
           const cleanMem = cleanString(member);
           let stats = agentStatsMap[cleanMem];
 
@@ -487,6 +483,38 @@
             done: 0, videocall: 0, 
             fdb: 0, conn_fdb: 0, imm_fdb: 0, conn_imm_fdb: 0
           };
+
+          return {
+            name: member,
+            stats: s
+          };
+        });
+
+        // Dynamic Sorting (High to Low / Decrease Order)
+        sortedMembers.sort((a, b) => {
+          const isPharmacistA = (a.stats.conn_imm_fdb > 0 || a.stats.imm_fdb > 0);
+          const isPharmacistB = (b.stats.conn_imm_fdb > 0 || b.stats.imm_fdb > 0);
+
+          if (isPharmacistA || isPharmacistB) {
+            // Priority for Pharmacists: Connected IMM FDB, then IMM FDB
+            if (b.stats.conn_imm_fdb !== a.stats.conn_imm_fdb) {
+              return b.stats.conn_imm_fdb - a.stats.conn_imm_fdb;
+            }
+            return b.stats.imm_fdb - a.stats.imm_fdb;
+          } else {
+            // Priority for Done Consultation Agents: Done Consultation Count
+            return b.stats.done - a.stats.done;
+          }
+        });
+
+        let tableRows = '';
+        let teamAchieved = 0;
+        let teamAgentCount = sortedMembers.length;
+
+        sortedMembers.forEach(item => {
+          const member = item.name;
+          const s = item.stats;
+          gTotAgents++;
 
           const campVal = Math.max(0, s.done - s.videocall);
 
