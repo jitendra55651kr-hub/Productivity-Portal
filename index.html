@@ -1,21 +1,586 @@
-// Strict & Accurate Sorting Logic
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Productivity Report - Unit 2</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; 
+      -webkit-font-smoothing: antialiased; 
+    }
+    
+    body { 
+      background-color: #f0fdf4; 
+      background-image: radial-gradient(#bbf7d0 0.75px, transparent 0.75px);
+      background-size: 16px 16px;
+      color: #064e3b; 
+      padding: 24px; 
+    }
+    
+    header { 
+      text-align: center; 
+      margin-bottom: 24px; 
+      padding: 28px 24px; 
+      background: linear-gradient(135deg, #022c22 0%, #064e3b 60%, #0f5132 100%); 
+      border-radius: 18px; 
+      border: 1px solid #10b981; 
+      box-shadow: 0 12px 30px -5px rgba(6, 78, 59, 0.35); 
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 300px;
+      height: 300px;
+      background: rgba(52, 211, 153, 0.08);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    
+    h1 { 
+      color: #ffffff; 
+      font-size: 32px; 
+      font-weight: 900; 
+      letter-spacing: 1.2px; 
+      text-transform: uppercase; 
+      margin-bottom: 6px; 
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    h1 span.title-icon { font-size: 34px; }
+    
+    .header-subtitle {
+      color: #34d399;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 22px;
+    }
+
+    .controls-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(8px);
+      padding: 14px 22px;
+      border-radius: 12px;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      margin-bottom: 18px;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #ecfdf5;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .control-group input[type="date"],
+    .control-group input[type="number"] {
+      background: #022c22;
+      border: 1.5px solid #10b981;
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .control-group input[type="date"]:focus,
+    .control-group input[type="number"]:focus {
+      border-color: #34d399;
+      box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+    }
+
+    .control-group input[type="number"] { width: 75px; text-align: center; }
+    
+    .upload-container { display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap; }
+    input[type="file"] { display: none; }
+    .custom-file-upload { 
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%); 
+      color: #ffffff; 
+      padding: 11px 24px; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      font-weight: 800; 
+      transition: all 0.2s ease; 
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4); 
+      text-transform: uppercase; 
+      font-size: 13px; 
+      letter-spacing: 0.8px; 
+      border: 1px solid #6ee7b7; 
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .custom-file-upload:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5); 
+      background: linear-gradient(135deg, #047857 0%, #059669 100%); 
+    }
+    .file-name { font-size: 13px; color: #a7f3d0; font-weight: 600; }
+    
+    .summary-cards { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+      gap: 14px; 
+      margin-bottom: 28px; 
+    }
+    
+    .card { 
+      background: linear-gradient(135deg, #022c22 0%, #064e3b 100%); 
+      padding: 18px 12px; 
+      border-radius: 14px; 
+      border: 1px solid #065f46; 
+      border-top: 5px solid #34d399; 
+      text-align: center; 
+      box-shadow: 0 8px 20px rgba(6, 78, 59, 0.25); 
+      transition: transform 0.25s ease, box-shadow 0.25s ease; 
+      position: relative;
+    }
+    .card:hover { 
+      transform: translateY(-4px); 
+      box-shadow: 0 12px 26px rgba(6, 78, 59, 0.35); 
+    }
+    
+    .card h3 { 
+      font-size: 11px; 
+      color: #a7f3d0; 
+      text-transform: uppercase; 
+      margin-bottom: 10px; 
+      font-weight: 800; 
+      letter-spacing: 0.8px; 
+      line-height: 1.3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .card p { 
+      font-size: 24px; 
+      font-weight: 900; 
+      color: #ffffff; 
+      letter-spacing: -0.5px;
+    }
+    
+    .card.highlight { border-top-color: #10b981; background: linear-gradient(135deg, #064e3b 0%, #047857 100%); }
+    .card.highlight p { color: #6ee7b7; text-shadow: 0 0 12px rgba(110, 231, 183, 0.4); }
+
+    .card.team-card { border-top-color: #f59e0b; }
+    .card.team-card p { color: #fde68a; }
+
+    .team-section { 
+      background: #ffffff; 
+      border-radius: 16px; 
+      border: 2px solid #a7f3d0; 
+      margin-bottom: 32px; 
+      overflow: hidden; 
+      box-shadow: 0 10px 25px rgba(6, 78, 59, 0.08); 
+    }
+    
+    .team-header { 
+      background: linear-gradient(135deg, #022c22 0%, #064e3b 100%); 
+      padding: 16px 22px; 
+      font-size: 18px; 
+      font-weight: 900; 
+      color: #ffffff; 
+      letter-spacing: 1px; 
+      border-bottom: 3px solid #10b981; 
+      text-transform: uppercase; 
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    
+    th { 
+      background-color: #064e3b; 
+      color: #ecfdf5; 
+      padding: 14px 10px; 
+      font-weight: 800; 
+      border-bottom: 3px solid #022c22; 
+      border-right: 1.5px solid #047857; 
+      text-transform: uppercase; 
+      font-size: 12px; 
+      text-align: center; 
+      letter-spacing: 0.5px; 
+    }
+    th:first-child { text-align: left; padding-left: 18px; }
+    th:last-child { border-right: none; }
+    
+    td { 
+      padding: 12px 10px; 
+      border-bottom: 1.5px solid #e2e8f0; 
+      border-right: 1.5px solid #e2e8f0; 
+      color: #0f172a; 
+      font-weight: 800; 
+      font-size: 14px; 
+    }
+    td:last-child { border-right: none; }
+    
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) { background-color: #f0fdf4; }
+    tr:nth-child(odd) { background-color: #ffffff; }
+    tr:hover { background-color: #dcfce7; }
+    
+    .agent-name { font-weight: 800; color: #064e3b; text-align: left; padding-left: 18px; font-size: 14px; }
+    .metric-val { text-align: center; font-size: 14px; color: #1e293b; font-weight: 800; }
+    .metric-target { text-align: center; font-size: 14px; color: #92400e; font-weight: 800; background-color: #fef3c7; }
+    .metric-achieved { text-align: center; font-size: 14px; color: #065f46; font-weight: 900; background-color: #d1fae5; }
+    .metric-prod { text-align: center; font-size: 14px; color: #0369a1; font-weight: 900; background-color: #e0f2fe; }
+    .metric-zero { color: #94a3b8; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1><span class="title-icon">📈</span> PRODUCTIVITY REPORT</h1>
+    <div class="header-subtitle">UNIT 2</div>
+    
+    <div class="controls-container">
+      <div class="control-group">
+        <label>📅 Start Date:</label>
+        <input type="date" id="startDate" onchange="handleDateChange()">
+      </div>
+      <div class="control-group">
+        <label>📅 End Date:</label>
+        <input type="date" id="endDate" onchange="handleDateChange()">
+      </div>
+      <div class="control-group">
+        <label>🎯 Working Days:</label>
+        <input type="number" id="workingDays" value="1" min="1" oninput="renderDashboard(latestParsedMap)">
+      </div>
+    </div>
+
+    <div class="upload-container">
+      <label for="fileInput" class="custom-file-upload">
+        📊 Upload Excel / CSV Data File
+      </label>
+      <input type="file" id="fileInput" accept=".csv, .xlsx, .xls">
+      <span class="file-name" id="fileName">No file chosen</span>
+    </div>
+  </header>
+
+  <div class="summary-cards" id="summaryCards">
+    <div class="card"><h3>👥 Total Agents</h3><p id="totAgents">0</p></div>
+    <div class="card"><h3>📆 Working Days</h3><p id="dispWorkingDays">1</p></div>
+    <div class="card highlight"><h3>🚀 Overall Prod %</h3><p id="totProd">0%</p></div>
+    <div class="card team-card"><h3>🛡️ Team Jitendra</h3><p id="prodJitendra">0%</p></div>
+    <div class="card team-card"><h3>⭐ Team Deepti</h3><p id="prodDeepti">0%</p></div>
+    <div class="card team-card"><h3>⚡ Team Ravi</h3><p id="prodRavi">0%</p></div>
+    <div class="card team-card"><h3>🔥 Team Shivam</h3><p id="prodShivam">0%</p></div>
+    <div class="card team-card"><h3>👑 Team Ishant</h3><p id="prodIshant">0%</p></div>
+  </div>
+
+  <div id="teamsContainer"></div>
+
+  <script>
+    const TEAMS = {
+      "TEAM JITENDRA": [
+        "Saurav Pal", "Md anas", "Renu Gupta", "Shivam verma", 
+        "Jogender singh", "Jayshree Choudhary", "Snigdha pal", 
+        "Rashi Gupta", "Kiran thakur", "Vaishali sisodiya", "ANKUR KUMAR"
+      ],
+      "TEAM DEEPTI": [
+        "Renu Rani", "Pooja Rathore", "ROSHNI PRAJAPATI", "GARVIT JHA", 
+        "Rajni Saini", "Puja Chauhan", "Shivansh tiwari", "Saifur Janam", 
+        "Anjali Gupta", "Roshni chouhan", "Rajesh"
+      ],
+      "TEAM RAVI": [
+        "Jyoti Singh unit 2", "Rajendra Mourya", "Apurv Acharya", 
+        "Amit Sharma", "Atul Kumar", "Sumit H", "Piyush Verma", 
+        "Shivam Shukla", "Hitesh Kumar", "Samirun Nisha", "Abuzar Akhtar"
+      ],
+      "TEAM SHIVAM": [
+        "Kamni Muthoot", "Nandani", "Burhan", 
+        "Chandrabhanu", "Munsi Sakil Ahmed", "Ashish Yadav", "Chandrabhanu Sukla",
+        "MOHD SHAKIB", "Snehal Sukhadeo Gaikwad", "Abuzar Akhtar", "ANKUR KUMAR"
+      ],
+      "TEAM ISHANT": [
+        "Isha mehta", "Ayushi Saxena", "Harivansh Agarwal", 
+        "Smruti Rani Sahoo", "Sushma Chaudhary", "Ashok Pawar", 
+        "PRIYA PATIDAR", "YASHWANT SINGH", "Sanjana Khuswaha", "NIKITA YADAV"
+      ]
+    };
+
+    let latestParsedMap = {};
+
+    document.getElementById('fileInput').addEventListener('change', handleFile);
+
+    function calculateWorkingDays(startDateStr, endDateStr) {
+      if (!startDateStr || !endDateStr) return 1;
+      let start = new Date(startDateStr);
+      let end = new Date(endDateStr);
+      if (start > end) return 1;
+
+      let count = 0;
+      let cur = new Date(start);
+      while (cur <= end) {
+        let dayOfWeek = cur.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          count++;
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+      return count === 0 ? 1 : count;
+    }
+
+    function handleDateChange() {
+      const sDate = document.getElementById('startDate').value;
+      const eDate = document.getElementById('endDate').value;
+      if (sDate && eDate) {
+        const calculatedDays = calculateWorkingDays(sDate, eDate);
+        document.getElementById('workingDays').value = calculatedDays;
+        renderDashboard(latestParsedMap);
+      }
+    }
+
+    function handleFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      document.getElementById('fileName').innerText = file.name;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+        processData(rawRows);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function cleanString(str) {
+      if (!str) return '';
+      return String(str).toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function processData(rows) {
+      let headerRowIndex = -1;
+      let colMap = {};
+
+      for (let i = 0; i < Math.min(20, rows.length); i++) {
+        const row = rows[i];
+        if (!row) continue;
+        
+        row.forEach((cell, colIdx) => {
+          const val = cleanString(cell);
+          if (val === 'agent' || val === 'agentname' || val === 'name') colMap['agent'] = colIdx;
+          if (val.includes('done')) colMap['done'] = colIdx;
+          if (val.includes('videocall') || val.includes('clinicvideo') || val === 'teledoc') colMap['videocall'] = colIdx;
+          
+          if (val === 'immfdb') colMap['imm_fdb'] = colIdx;
+          else if (val.includes('connectedimmfdb') || val.includes('connimm')) colMap['conn_imm_fdb'] = colIdx;
+          else if (val.includes('connectedfdb') || val.includes('connected')) colMap['conn_fdb'] = colIdx;
+          else if (val === 'fdb') colMap['fdb'] = colIdx;
+        });
+
+        if (colMap['agent'] !== undefined) {
+          headerRowIndex = i;
+          break;
+        }
+      }
+
+      if (headerRowIndex === -1) {
+        alert("Could not find 'Agent' column in the uploaded sheet.");
+        return;
+      }
+
+      const agentStatsMap = {};
+
+      for (let i = headerRowIndex + 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || !row[colMap['agent']]) continue;
+
+        const rawName = String(row[colMap['agent']]).trim();
+        const cleanName = cleanString(rawName);
+
+        const getNum = (colKey) => {
+          if (colMap[colKey] === undefined) return 0;
+          const val = parseFloat(row[colMap[colKey]]);
+          return isNaN(val) ? 0 : val;
+        };
+
+        agentStatsMap[cleanName] = {
+          displayName: rawName,
+          done: getNum('done'),
+          videocall: getNum('videocall'),
+          fdb: getNum('fdb'),
+          conn_fdb: getNum('conn_fdb'),
+          imm_fdb: getNum('imm_fdb'),
+          conn_imm_fdb: getNum('conn_imm_fdb')
+        };
+      }
+
+      latestParsedMap = agentStatsMap;
+      renderDashboard(agentStatsMap);
+    }
+
+    function renderDashboard(agentStatsMap) {
+      const container = document.getElementById('teamsContainer');
+      container.innerHTML = '';
+
+      const workingDays = parseFloat(document.getElementById('workingDays').value) || 1;
+      const targetPerAgent = workingDays * 300;
+
+      let gTotAgents = 0, gTotAchieved = 0;
+      const teamProdResults = {};
+
+      Object.keys(TEAMS).forEach(teamName => {
+        const rawMembers = TEAMS[teamName];
+
+        let sortedMembers = rawMembers.map(member => {
+          const cleanMem = cleanString(member);
+          let stats = agentStatsMap[cleanMem];
+
+          if (!stats) {
+            const key = Object.keys(agentStatsMap).find(k => {
+              const cleanMemAlt = cleanMem.replace('saurabh', 'saurav');
+              const kAlt = k.replace('saurabh', 'saurav');
+              return k.includes(cleanMem) || cleanMem.includes(k) || kAlt.includes(cleanMemAlt) || cleanMemAlt.includes(kAlt);
+            });
+            if (key) stats = agentStatsMap[key];
+          }
+
+          const s = stats || {
+            done: 0, videocall: 0, 
+            fdb: 0, conn_fdb: 0, imm_fdb: 0, conn_imm_fdb: 0
+          };
+
+          return {
+            name: member,
+            stats: s
+          };
+        });
+
+        // Strict & Accurate Sorting Logic inside Script block
         sortedMembers.sort((a, b) => {
-          // Rule: Agar Done Consultation > 0 hai toh wo pure Agent hai
           const isAgentA = a.stats.done > 0;
           const isAgentB = b.stats.done > 0;
 
-          // 1. Pehle Agents ko Pharmacists se upar rakho
           if (isAgentA && !isAgentB) return -1;
           if (!isAgentA && isAgentB) return 1;
 
-          // 2. Agar dono AGENTS hain -> Sort by Done Consultation (Highest to Lowest)
           if (isAgentA && isAgentB) {
             return b.stats.done - a.stats.done;
           }
 
-          // 3. Agar dono PHARMACISTS hain -> Sort by Connected IMM FDB (Highest to Lowest)
           if (b.stats.conn_imm_fdb !== a.stats.conn_imm_fdb) {
             return b.stats.conn_imm_fdb - a.stats.conn_imm_fdb;
           }
           return b.stats.imm_fdb - a.stats.imm_fdb;
         });
+
+        let tableRows = '';
+        let teamAchieved = 0;
+        let teamAgentCount = sortedMembers.length;
+
+        sortedMembers.forEach(item => {
+          const member = item.name;
+          const s = item.stats;
+          gTotAgents++;
+
+          const campVal = Math.max(0, s.done - s.videocall);
+          const achievedVal = (s.videocall * 5) + (campVal * 4) + (s.conn_fdb * 3) + (s.conn_imm_fdb * 5);
+          const prodVal = targetPerAgent > 0 ? ((achievedVal / targetPerAgent) * 100) : 0;
+
+          teamAchieved += achievedVal;
+          gTotAchieved += achievedVal;
+
+          const fmt = (val) => val <= 0 ? `<span class="metric-zero">0</span>` : val;
+
+          tableRows += `
+            <tr>
+              <td class="agent-name">${member}</td>
+              <td class="metric-val">${fmt(s.done)}</td>
+              <td class="metric-val">${fmt(campVal)}</td>
+              <td class="metric-val">${fmt(s.videocall)}</td>
+              <td class="metric-val">${fmt(s.fdb)}</td>
+              <td class="metric-val">${fmt(s.conn_fdb)}</td>
+              <td class="metric-val">${fmt(s.imm_fdb)}</td>
+              <td class="metric-val">${fmt(s.conn_imm_fdb)}</td>
+              <td class="metric-target">${targetPerAgent.toLocaleString()}</td>
+              <td class="metric-achieved">${fmt(achievedVal)}</td>
+              <td class="metric-prod">${prodVal.toFixed(1)}%</td>
+            </tr>
+          `;
+        });
+
+        const teamTotalTarget = teamAgentCount * targetPerAgent;
+        const teamProdPct = teamTotalTarget > 0 ? ((teamAchieved / teamTotalTarget) * 100) : 0;
+        teamProdResults[teamName] = teamProdPct.toFixed(1) + '%';
+
+        const teamHtml = `
+          <div class="team-section">
+            <div class="team-header">📊 ${teamName}</div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Agent Name</th>
+                    <th>Done Consultation</th>
+                    <th>Camp</th>
+                    <th>Clinic Video Call</th>
+                    <th>FDB</th>
+                    <th>Connected FDB</th>
+                    <th>IMM FDB</th>
+                    <th>Connected IMM FDB</th>
+                    <th>Total Target</th>
+                    <th>Achieved Target</th>
+                    <th>Productivity %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tableRows}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+        container.innerHTML += teamHtml;
+      });
+
+      const grandTotalTarget = gTotAgents * targetPerAgent;
+      const overallProdPct = grandTotalTarget > 0 ? ((gTotAchieved / grandTotalTarget) * 100) : 0;
+
+      document.getElementById('totAgents').innerText = gTotAgents;
+      document.getElementById('dispWorkingDays').innerText = workingDays;
+      document.getElementById('totProd').innerText = overallProdPct.toFixed(1) + '%';
+
+      document.getElementById('prodJitendra').innerText = teamProdResults["TEAM JITENDRA"] || "0%";
+      document.getElementById('prodDeepti').innerText = teamProdResults["TEAM DEEPTI"] || "0%";
+      document.getElementById('prodRavi').innerText = teamProdResults["TEAM RAVI"] || "0%";
+      document.getElementById('prodShivam').innerText = teamProdResults["TEAM SHIVAM"] || "0%";
+      document.getElementById('prodIshant').innerText = teamProdResults["TEAM ISHANT"] || "0%";
+    }
+
+    renderDashboard({});
+  </script>
+</body>
+</html>
