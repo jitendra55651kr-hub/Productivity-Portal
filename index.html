@@ -145,7 +145,7 @@
     
     .summary-cards { 
       display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
       gap: 14px; 
       margin-bottom: 28px; 
     }
@@ -189,8 +189,35 @@
     .card.highlight { border-top-color: #10b981; background: linear-gradient(135deg, #064e3b 0%, #047857 100%); }
     .card.highlight p { color: #6ee7b7; text-shadow: 0 0 12px rgba(110, 231, 183, 0.4); }
 
-    .card.team-card { border-top-color: #f59e0b; }
-    .card.team-card p { color: #fde68a; }
+    .card.team-card { border-top-color: #f59e0b; padding: 14px 10px; }
+    
+    /* Sub-boxes inside Team Card */
+    .split-metrics {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .sub-box {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 8px 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .sub-box span.lbl {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fde68a;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .sub-box span.val {
+      display: block;
+      font-size: 16px;
+      font-weight: 900;
+      color: #ffffff;
+    }
 
     .team-section { 
       background: #ffffff; 
@@ -287,14 +314,50 @@
   </header>
 
   <div class="summary-cards" id="summaryCards">
-    <div class="card"><h3>👥 Total Agents</h3><p id="totAgents">0</p></div>
+    <div class="card"><h3>👥 Total Members</h3><p id="totAgents">0</p></div>
     <div class="card"><h3>📆 Working Days</h3><p id="dispWorkingDays">1</p></div>
     <div class="card highlight"><h3>🚀 Overall Prod %</h3><p id="totProd">0%</p></div>
-    <div class="card team-card"><h3>🛡️ Team Jitendra</h3><p id="prodJitendra">0%</p></div>
-    <div class="card team-card"><h3>⭐ Team Deepti</h3><p id="prodDeepti">0%</p></div>
-    <div class="card team-card"><h3>⚡ Team Ravi</h3><p id="prodRavi">0%</p></div>
-    <div class="card team-card"><h3>🔥 Team Shivam</h3><p id="prodShivam">0%</p></div>
-    <div class="card team-card"><h3>👑 Team Ishant</h3><p id="prodIshant">0%</p></div>
+    
+    <!-- Team Cards with 2 Sub-Boxes Each -->
+    <div class="card team-card">
+      <h3>🛡️ Team Jitendra</h3>
+      <div class="split-metrics">
+        <div class="sub-box"><span class="lbl">Agent Avg</span><span class="val" id="jitendraAgent">0%</span></div>
+        <div class="sub-box"><span class="lbl">Pharm Avg</span><span class="val" id="jitendraPharm">0%</span></div>
+      </div>
+    </div>
+
+    <div class="card team-card">
+      <h3>⭐ Team Deepti</h3>
+      <div class="split-metrics">
+        <div class="sub-box"><span class="lbl">Agent Avg</span><span class="val" id="deeptiAgent">0%</span></div>
+        <div class="sub-box"><span class="lbl">Pharm Avg</span><span class="val" id="deeptiPharm">0%</span></div>
+      </div>
+    </div>
+
+    <div class="card team-card">
+      <h3>⚡ Team Ravi</h3>
+      <div class="split-metrics">
+        <div class="sub-box"><span class="lbl">Agent Avg</span><span class="val" id="raviAgent">0%</span></div>
+        <div class="sub-box"><span class="lbl">Pharm Avg</span><span class="val" id="raviPharm">0%</span></div>
+      </div>
+    </div>
+
+    <div class="card team-card">
+      <h3>🔥 Team Shivam</h3>
+      <div class="split-metrics">
+        <div class="sub-box"><span class="lbl">Agent Avg</span><span class="val" id="shivamAgent">0%</span></div>
+        <div class="sub-box"><span class="lbl">Pharm Avg</span><span class="val" id="shivamPharm">0%</span></div>
+      </div>
+    </div>
+
+    <div class="card team-card">
+      <h3>👑 Team Ishant</h3>
+      <div class="split-metrics">
+        <div class="sub-box"><span class="lbl">Agent Avg</span><span class="val" id="ishantAgent">0%</span></div>
+        <div class="sub-box"><span class="lbl">Pharm Avg</span><span class="val" id="ishantPharm">0%</span></div>
+      </div>
+    </div>
   </div>
 
   <div id="teamsContainer"></div>
@@ -450,7 +513,7 @@
       const targetPerAgent = workingDays * 300;
 
       let gTotAgents = 0, gTotAchieved = 0;
-      const teamProdResults = {};
+      const teamSplitResults = {};
 
       Object.keys(TEAMS).forEach(teamName => {
         const rawMembers = TEAMS[teamName];
@@ -479,7 +542,7 @@
           };
         });
 
-        // Strict & Accurate Sorting Logic inside Script block
+        // Strict & Accurate Sorting Logic
         sortedMembers.sort((a, b) => {
           const isAgentA = a.stats.done > 0;
           const isAgentB = b.stats.done > 0;
@@ -498,8 +561,10 @@
         });
 
         let tableRows = '';
-        let teamAchieved = 0;
-        let teamAgentCount = sortedMembers.length;
+        
+        // Split calculations per team
+        let agentAchieved = 0, agentCount = 0;
+        let pharmAchieved = 0, pharmCount = 0;
 
         sortedMembers.forEach(item => {
           const member = item.name;
@@ -510,8 +575,15 @@
           const achievedVal = (s.videocall * 5) + (campVal * 4) + (s.conn_fdb * 3) + (s.conn_imm_fdb * 5);
           const prodVal = targetPerAgent > 0 ? ((achievedVal / targetPerAgent) * 100) : 0;
 
-          teamAchieved += achievedVal;
           gTotAchieved += achievedVal;
+
+          if (s.done > 0) {
+            agentAchieved += achievedVal;
+            agentCount++;
+          } else {
+            pharmAchieved += achievedVal;
+            pharmCount++;
+          }
 
           const fmt = (val) => val <= 0 ? `<span class="metric-zero">0</span>` : val;
 
@@ -532,9 +604,13 @@
           `;
         });
 
-        const teamTotalTarget = teamAgentCount * targetPerAgent;
-        const teamProdPct = teamTotalTarget > 0 ? ((teamAchieved / teamTotalTarget) * 100) : 0;
-        teamProdResults[teamName] = teamProdPct.toFixed(1) + '%';
+        const agentTarget = agentCount * targetPerAgent;
+        const agentAvgPct = agentTarget > 0 ? ((agentAchieved / agentTarget) * 100).toFixed(1) + '%' : '0%';
+
+        const pharmTarget = pharmCount * targetPerAgent;
+        const pharmAvgPct = pharmTarget > 0 ? ((pharmAchieved / pharmTarget) * 100).toFixed(1) + '%' : '0%';
+
+        teamSplitResults[teamName] = { agentAvg: agentAvgPct, pharmAvg: pharmAvgPct };
 
         const teamHtml = `
           <div class="team-section">
@@ -573,11 +649,21 @@
       document.getElementById('dispWorkingDays').innerText = workingDays;
       document.getElementById('totProd').innerText = overallProdPct.toFixed(1) + '%';
 
-      document.getElementById('prodJitendra').innerText = teamProdResults["TEAM JITENDRA"] || "0%";
-      document.getElementById('prodDeepti').innerText = teamProdResults["TEAM DEEPTI"] || "0%";
-      document.getElementById('prodRavi').innerText = teamProdResults["TEAM RAVI"] || "0%";
-      document.getElementById('prodShivam').innerText = teamProdResults["TEAM SHIVAM"] || "0%";
-      document.getElementById('prodIshant').innerText = teamProdResults["TEAM ISHANT"] || "0%";
+      // Update Split Values into UI Cards
+      const mapKeyToId = {
+        "TEAM JITENDRA": ["jitendraAgent", "jitendraPharm"],
+        "TEAM DEEPTI": ["deeptiAgent", "deeptiPharm"],
+        "TEAM RAVI": ["raviAgent", "raviPharm"],
+        "TEAM SHIVAM": ["shivamAgent", "shivamPharm"],
+        "TEAM ISHANT": ["ishantAgent", "ishantPharm"]
+      };
+
+      Object.keys(mapKeyToId).forEach(teamKey => {
+        const ids = mapKeyToId[teamKey];
+        const res = teamSplitResults[teamKey] || { agentAvg: "0%", pharmAvg: "0%" };
+        document.getElementById(ids[0]).innerText = res.agentAvg;
+        document.getElementById(ids[1]).innerText = res.pharmAvg;
+      });
     }
 
     renderDashboard({});
