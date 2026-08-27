@@ -465,7 +465,6 @@
       Object.keys(TEAMS).forEach(teamName => {
         const rawMembers = TEAMS[teamName];
 
-        // Prepare extended agent data for sorting
         let sortedMembers = rawMembers.map(member => {
           const cleanMem = cleanString(member);
           let stats = agentStatsMap[cleanMem];
@@ -490,21 +489,25 @@
           };
         });
 
-        // Dynamic Sorting (High to Low / Decrease Order)
+        // Dynamic Sorting logic: Agents on top, Pharmacists on bottom
         sortedMembers.sort((a, b) => {
-          const isPharmacistA = (a.stats.conn_imm_fdb > 0 || a.stats.imm_fdb > 0);
-          const isPharmacistB = (b.stats.conn_imm_fdb > 0 || b.stats.imm_fdb > 0);
+          const isPharmA = (a.stats.conn_imm_fdb > 0 || a.stats.imm_fdb > 0);
+          const isPharmB = (b.stats.conn_imm_fdb > 0 || b.stats.imm_fdb > 0);
 
-          if (isPharmacistA || isPharmacistB) {
-            // Priority for Pharmacists: Connected IMM FDB, then IMM FDB
-            if (b.stats.conn_imm_fdb !== a.stats.conn_imm_fdb) {
-              return b.stats.conn_imm_fdb - a.stats.conn_imm_fdb;
-            }
-            return b.stats.imm_fdb - a.stats.imm_fdb;
-          } else {
-            // Priority for Done Consultation Agents: Done Consultation Count
+          // 1. Agar ek agent hai aur ek pharmacist, to agent hamesha upar rahega
+          if (!isPharmA && isPharmB) return -1;
+          if (isPharmA && !isPharmB) return 1;
+
+          // 2. Agar dono Agents hain -> Sort by Done Consultation (High to Low)
+          if (!isPharmA && !isPharmB) {
             return b.stats.done - a.stats.done;
           }
+
+          // 3. Agar dono Pharmacists hain -> Sort by Connected IMM FDB, then IMM FDB (High to Low)
+          if (b.stats.conn_imm_fdb !== a.stats.conn_imm_fdb) {
+            return b.stats.conn_imm_fdb - a.stats.conn_imm_fdb;
+          }
+          return b.stats.imm_fdb - a.stats.imm_fdb;
         });
 
         let tableRows = '';
