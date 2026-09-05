@@ -459,7 +459,6 @@
       ]
     };
 
-    // Default sorting logic: Agents sort by done, Pharmacists sort by imm_fdb
     let currentAgentSort = 'done';
     let currentPharmSort = 'imm_fdb';
     let latestParsedMap = {};
@@ -642,7 +641,7 @@
         let agentsGroup = membersList.filter(m => m.stats.done > 0);
         let pharmGroup = membersList.filter(m => m.stats.done === 0);
 
-        // Sort both groups independently based on active keys
+        // Sort both groups
         agentsGroup = sortGroup(agentsGroup, currentAgentSort);
         pharmGroup = sortGroup(pharmGroup, currentPharmSort);
 
@@ -701,7 +700,7 @@
 
         // Render Agents Section
         if (agentsGroup.length > 0) {
-          tableRows += `<tr class="role-divider"><td colspan="11">👨‍💼 AGENTS (CONSULTATION) — Sorted High-to-Low</td></tr>`;
+          tableRows += `<tr class="role-divider"><td colspan="11">AGENT</td></tr>`;
           agentsGroup.forEach(item => {
             agentAchieved += item.achievedVal;
             tableRows += buildRow(item);
@@ -710,7 +709,7 @@
 
         // Render Pharmacists Section
         if (pharmGroup.length > 0) {
-          tableRows += `<tr class="role-divider"><td colspan="11">💊 PHARMACISTS (IMM FDB / CALLING) — Sorted High-to-Low</td></tr>`;
+          tableRows += `<tr class="role-divider"><td colspan="11">PHARMACIST</td></tr>`;
           pharmGroup.forEach(item => {
             pharmAchieved += item.achievedVal;
             tableRows += buildRow(item);
