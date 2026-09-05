@@ -98,7 +98,8 @@
     }
 
     .control-group input[type="date"],
-    .control-group input[type="number"] {
+    .control-group input[type="number"],
+    .control-group select {
       background: #022c22;
       border: 1.5px solid #10b981;
       color: #ffffff;
@@ -110,7 +111,8 @@
     }
 
     .control-group input[type="date"]:focus,
-    .control-group input[type="number"]:focus {
+    .control-group input[type="number"]:focus,
+    .control-group select:focus {
       border-color: #34d399;
       box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
     }
@@ -173,17 +175,17 @@
       margin-bottom: 10px; 
       font-weight: 800; 
       letter-spacing: 0.8px; 
-      line-height: 1.3;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
+      line-height: 1.3; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 6px; 
     }
     .card p { 
       font-size: 24px; 
       font-weight: 900; 
       color: #ffffff; 
-      letter-spacing: -0.5px;
+      letter-spacing: -0.5px; 
     }
     
     .card.highlight { border-top-color: #10b981; background: linear-gradient(135deg, #064e3b 0%, #047857 100%); }
@@ -191,31 +193,31 @@
 
     .card.team-card { border-top-color: #f59e0b; padding: 14px 10px; }
     
-    .split-metrics {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
+    .split-metrics { 
+      display: flex; 
+      gap: 8px; 
+      margin-top: 8px; 
     }
-    .sub-box {
-      flex: 1;
-      background: rgba(0, 0, 0, 0.25);
-      padding: 8px 4px;
-      border-radius: 8px;
-      border: 1px solid rgba(245, 158, 11, 0.3);
+    .sub-box { 
+      flex: 1; 
+      background: rgba(0, 0, 0, 0.25); 
+      padding: 8px 4px; 
+      border-radius: 8px; 
+      border: 1px solid rgba(245, 158, 11, 0.3); 
     }
-    .sub-box span.lbl {
-      display: block;
-      font-size: 10px;
-      font-weight: 700;
-      color: #fde68a;
-      text-transform: uppercase;
-      margin-bottom: 4px;
+    .sub-box span.lbl { 
+      display: block; 
+      font-size: 10px; 
+      font-weight: 700; 
+      color: #fde68a; 
+      text-transform: uppercase; 
+      margin-bottom: 4px; 
     }
-    .sub-box span.val {
-      display: block;
-      font-size: 16px;
-      font-weight: 900;
-      color: #ffffff;
+    .sub-box span.val { 
+      display: block; 
+      font-size: 16px; 
+      font-weight: 900; 
+      color: #ffffff; 
     }
 
     .team-section { 
@@ -236,43 +238,43 @@
       letter-spacing: 1px; 
       border-bottom: 3px solid #10b981; 
       text-transform: uppercase; 
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      flex-wrap: wrap; 
+      gap: 12px; 
     }
 
-    .team-header-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .team-header-title { 
+      display: flex; 
+      align-items: center; 
+      gap: 10px; 
     }
 
-    .team-header-averages {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .team-header-averages { 
+      display: flex; 
+      align-items: center; 
+      gap: 10px; 
     }
 
-    .header-avg-badge {
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(52, 211, 153, 0.4);
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 800;
-      color: #ecfdf5;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      letter-spacing: 0.5px;
+    .header-avg-badge { 
+      background: rgba(255, 255, 255, 0.12); 
+      border: 1px solid rgba(52, 211, 153, 0.4); 
+      padding: 5px 12px; 
+      border-radius: 20px; 
+      font-size: 12px; 
+      font-weight: 800; 
+      color: #ecfdf5; 
+      display: flex; 
+      align-items: center; 
+      gap: 6px; 
+      letter-spacing: 0.5px; 
     }
 
-    .header-avg-badge .highlight-val {
-      color: #34d399;
-      font-size: 14px;
-      font-weight: 900;
+    .header-avg-badge .highlight-val { 
+      color: #34d399; 
+      font-size: 14px; 
+      font-weight: 900; 
     }
     
     .table-responsive { overflow-x: auto; }
@@ -289,9 +291,20 @@
       font-size: 12px; 
       text-align: center; 
       letter-spacing: 0.5px; 
+      user-select: none;
     }
     th:first-child { text-align: left; padding-left: 18px; }
     th:last-child { border-right: none; }
+    
+    th.sortable-th {
+      cursor: pointer;
+      background-color: #055a43;
+      transition: background-color 0.2s;
+    }
+    th.sortable-th:hover {
+      background-color: #087356;
+      color: #34d399;
+    }
     
     td { 
       padding: 12px 10px; 
@@ -308,15 +321,25 @@
     tr:nth-child(odd) { background-color: #ffffff; }
     tr:hover { background-color: #dcfce7; }
     
+    .role-divider td {
+      background-color: #e2e8f0 !important;
+      color: #1e293b !important;
+      font-size: 11px !important;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 900 !important;
+      padding: 6px 18px !important;
+    }
+
     .agent-name { 
       font-weight: 800; 
       color: #064e3b; 
       text-align: left; 
       padding-left: 18px; 
       font-size: 14px; 
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
     }
     .metric-val { text-align: center; font-size: 14px; color: #1e293b; font-weight: 800; }
     .metric-target { text-align: center; font-size: 14px; color: #92400e; font-weight: 800; background-color: #fef3c7; }
@@ -324,11 +347,10 @@
     .metric-prod { text-align: center; font-size: 14px; color: #0369a1; font-weight: 900; background-color: #e0f2fe; }
     .metric-zero { color: #94a3b8; font-weight: 700; }
 
-    /* Performance Icons */
-    .perf-icon {
-      font-size: 16px;
-      line-height: 1;
-      display: inline-block;
+    .perf-icon { 
+      font-size: 16px; 
+      line-height: 1; 
+      display: inline-block; 
     }
   </style>
 </head>
@@ -350,6 +372,27 @@
       <div class="control-group">
         <label>🎯 Working Days:</label>
         <input type="number" id="workingDays" value="1" min="1" oninput="renderDashboard(latestParsedMap)">
+      </div>
+      
+      <!-- DUAL FILTER CONTROLS -->
+      <div class="control-group">
+        <label>👤 Agent Sort:</label>
+        <select id="agentSortSelect" onchange="updateSortPreferences()">
+          <option value="done" selected>Book Consultation (Done) High-to-Low</option>
+          <option value="achievedVal">Achieved Target High-to-Low</option>
+          <option value="prodVal">Productivity % High-to-Low</option>
+          <option value="name">Name (A-Z)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>💊 Pharm Sort:</label>
+        <select id="pharmSortSelect" onchange="updateSortPreferences()">
+          <option value="imm_fdb" selected>IMM FDB High-to-Low</option>
+          <option value="conn_imm_fdb">Connected IMM FDB High-to-Low</option>
+          <option value="achievedVal">Achieved Target High-to-Low</option>
+          <option value="prodVal">Productivity % High-to-Low</option>
+          <option value="name">Name (A-Z)</option>
+        </select>
       </div>
     </div>
 
@@ -439,9 +482,30 @@
       ]
     };
 
+    // Global sort states
+    let currentAgentSort = 'done';
+    let currentPharmSort = 'imm_fdb';
     let latestParsedMap = {};
 
     document.getElementById('fileInput').addEventListener('change', handleFile);
+
+    function updateSortPreferences() {
+      currentAgentSort = document.getElementById('agentSortSelect').value;
+      currentPharmSort = document.getElementById('pharmSortSelect').value;
+      renderDashboard(latestParsedMap);
+    }
+
+    function toggleAgentSort() {
+      currentAgentSort = (currentAgentSort === 'done') ? 'achievedVal' : 'done';
+      document.getElementById('agentSortSelect').value = currentAgentSort;
+      renderDashboard(latestParsedMap);
+    }
+
+    function togglePharmSort() {
+      currentPharmSort = (currentPharmSort === 'imm_fdb') ? 'conn_imm_fdb' : 'imm_fdb';
+      document.getElementById('pharmSortSelect').value = currentPharmSort;
+      renderDashboard(latestParsedMap);
+    }
 
     function calculateWorkingDays(startDateStr, endDateStr) {
       if (!startDateStr || !endDateStr) return 1;
@@ -553,6 +617,17 @@
       renderDashboard(agentStatsMap);
     }
 
+    function sortGroup(group, sortKey) {
+      return group.sort((a, b) => {
+        if (sortKey === 'name') {
+          return a.name.localeCompare(b.name);
+        }
+        let valA = (sortKey === 'achievedVal' || sortKey === 'prodVal') ? a[sortKey] : (a.stats[sortKey] || 0);
+        let valB = (sortKey === 'achievedVal' || sortKey === 'prodVal') ? b[sortKey] : (b.stats[sortKey] || 0);
+        return valB - valA;
+      });
+    }
+
     function renderDashboard(agentStatsMap) {
       const container = document.getElementById('teamsContainer');
       container.innerHTML = '';
@@ -597,17 +672,17 @@
           };
         });
 
-        // Separate Agents & Pharmacists
-        const agentsGroup = membersList.filter(m => m.stats.done > 0);
-        const pharmGroup = membersList.filter(m => m.stats.done === 0);
+        // Split: Agents (who have Done Consultation > 0) & Pharmacists (who work on FDB/IMM)
+        let agentsGroup = membersList.filter(m => m.stats.done > 0);
+        let pharmGroup = membersList.filter(m => m.stats.done === 0);
 
-        // Sort Groups by Achieved Target
-        agentsGroup.sort((a, b) => b.achievedVal - a.achievedVal);
-        pharmGroup.sort((a, b) => b.achievedVal - a.achievedVal);
+        // Sort both groups simultaneously based on their respective active filters
+        agentsGroup = sortGroup(agentsGroup, currentAgentSort);
+        pharmGroup = sortGroup(pharmGroup, currentPharmSort);
 
         // Tag Top 2 / Low 2 in Agents
         agentsGroup.forEach((m, idx) => {
-          if (idx < 2) m.tag = 'top';
+          if (idx < 2 && m.achievedVal > 0) m.tag = 'top';
           else if (idx >= agentsGroup.length - 2) m.tag = 'low';
           else m.tag = 'normal';
         });
@@ -619,27 +694,18 @@
           else m.tag = 'normal';
         });
 
-        // Combine for table rendering (Agents on top, Pharmacists below)
-        const sortedMembers = [...agentsGroup, ...pharmGroup];
-
         let tableRows = '';
         let agentAchieved = 0, agentCount = agentsGroup.length;
         let pharmAchieved = 0, pharmCount = pharmGroup.length;
 
-        sortedMembers.forEach(item => {
+        const fmt = (val) => val <= 0 ? `<span class="metric-zero">0</span>` : val;
+
+        const buildRow = (item) => {
           const member = item.name;
           const s = item.stats;
           gTotAgents++;
-
           gTotAchieved += item.achievedVal;
 
-          if (s.done > 0) {
-            agentAchieved += item.achievedVal;
-          } else {
-            pharmAchieved += item.achievedVal;
-          }
-
-          // Generate Icons (without text badges)
           let iconHtml = '';
           if (item.tag === 'top') {
             iconHtml = `<span class="perf-icon" title="Top Performer">🏆</span>`;
@@ -647,9 +713,7 @@
             iconHtml = `<span class="perf-icon" title="Low Productivity">🔻</span>`;
           }
 
-          const fmt = (val) => val <= 0 ? `<span class="metric-zero">0</span>` : val;
-
-          tableRows += `
+          return `
             <tr>
               <td class="agent-name">
                 <span>${member}</span>
@@ -667,7 +731,25 @@
               <td class="metric-prod">${item.prodVal.toFixed(1)}%</td>
             </tr>
           `;
-        });
+        };
+
+        // Render Agents Section
+        if (agentsGroup.length > 0) {
+          tableRows += `<tr class="role-divider"><td colspan="11">👨‍💼 AGENTS (CONSULTATION) — Sorted by: ${currentAgentSort.toUpperCase()} (High-to-Low)</td></tr>`;
+          agentsGroup.forEach(item => {
+            agentAchieved += item.achievedVal;
+            tableRows += buildRow(item);
+          });
+        }
+
+        // Render Pharmacists Section
+        if (pharmGroup.length > 0) {
+          tableRows += `<tr class="role-divider"><td colspan="11">💊 PHARMACISTS (IMM FDB / CALLING) — Sorted by: ${currentPharmSort.toUpperCase()} (High-to-Low)</td></tr>`;
+          pharmGroup.forEach(item => {
+            pharmAchieved += item.achievedVal;
+            tableRows += buildRow(item);
+          });
+        }
 
         const agentTarget = agentCount * targetPerAgent;
         const agentAvgPct = agentTarget > 0 ? ((agentAchieved / agentTarget) * 100).toFixed(1) + '%' : '0%';
@@ -697,12 +779,12 @@
                 <thead>
                   <tr>
                     <th>Agent Name</th>
-                    <th>Done Consultation</th>
+                    <th class="sortable-th" onclick="toggleAgentSort()" title="Click to toggle Agent sorting">Done Consultation ⬍</th>
                     <th>Camp</th>
                     <th>Clinic Video Call</th>
                     <th>FDB</th>
                     <th>Connected FDB</th>
-                    <th>IMM FDB</th>
+                    <th class="sortable-th" onclick="togglePharmSort()" title="Click to toggle Pharmacist sorting">IMM FDB ⬍</th>
                     <th>Connected IMM FDB</th>
                     <th>Total Target</th>
                     <th>Achieved Target</th>
@@ -726,7 +808,6 @@
       document.getElementById('dispWorkingDays').innerText = workingDays;
       document.getElementById('totProd').innerText = overallProdPct.toFixed(1) + '%';
 
-      // Update Summary Cards
       const mapKeyToId = {
         "TEAM JITENDRA": ["jitendraAgent", "jitendraPharm"],
         "TEAM DEEPTI": ["deeptiAgent", "deeptiPharm"],
