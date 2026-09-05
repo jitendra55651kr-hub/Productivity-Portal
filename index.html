@@ -98,8 +98,7 @@
     }
 
     .control-group input[type="date"],
-    .control-group input[type="number"],
-    .control-group select {
+    .control-group input[type="number"] {
       background: #022c22;
       border: 1.5px solid #10b981;
       color: #ffffff;
@@ -111,8 +110,7 @@
     }
 
     .control-group input[type="date"]:focus,
-    .control-group input[type="number"]:focus,
-    .control-group select:focus {
+    .control-group input[type="number"]:focus {
       border-color: #34d399;
       box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
     }
@@ -373,27 +371,6 @@
         <label>🎯 Working Days:</label>
         <input type="number" id="workingDays" value="1" min="1" oninput="renderDashboard(latestParsedMap)">
       </div>
-      
-      <!-- DUAL FILTER CONTROLS -->
-      <div class="control-group">
-        <label>👤 Agent Sort:</label>
-        <select id="agentSortSelect" onchange="updateSortPreferences()">
-          <option value="done" selected>Book Consultation (Done) High-to-Low</option>
-          <option value="achievedVal">Achieved Target High-to-Low</option>
-          <option value="prodVal">Productivity % High-to-Low</option>
-          <option value="name">Name (A-Z)</option>
-        </select>
-      </div>
-      <div class="control-group">
-        <label>💊 Pharm Sort:</label>
-        <select id="pharmSortSelect" onchange="updateSortPreferences()">
-          <option value="imm_fdb" selected>IMM FDB High-to-Low</option>
-          <option value="conn_imm_fdb">Connected IMM FDB High-to-Low</option>
-          <option value="achievedVal">Achieved Target High-to-Low</option>
-          <option value="prodVal">Productivity % High-to-Low</option>
-          <option value="name">Name (A-Z)</option>
-        </select>
-      </div>
     </div>
 
     <div class="upload-container">
@@ -482,28 +459,20 @@
       ]
     };
 
-    // Global sort states
+    // Default sorting logic: Agents sort by done, Pharmacists sort by imm_fdb
     let currentAgentSort = 'done';
     let currentPharmSort = 'imm_fdb';
     let latestParsedMap = {};
 
     document.getElementById('fileInput').addEventListener('change', handleFile);
 
-    function updateSortPreferences() {
-      currentAgentSort = document.getElementById('agentSortSelect').value;
-      currentPharmSort = document.getElementById('pharmSortSelect').value;
-      renderDashboard(latestParsedMap);
-    }
-
     function toggleAgentSort() {
       currentAgentSort = (currentAgentSort === 'done') ? 'achievedVal' : 'done';
-      document.getElementById('agentSortSelect').value = currentAgentSort;
       renderDashboard(latestParsedMap);
     }
 
     function togglePharmSort() {
       currentPharmSort = (currentPharmSort === 'imm_fdb') ? 'conn_imm_fdb' : 'imm_fdb';
-      document.getElementById('pharmSortSelect').value = currentPharmSort;
       renderDashboard(latestParsedMap);
     }
 
@@ -619,9 +588,6 @@
 
     function sortGroup(group, sortKey) {
       return group.sort((a, b) => {
-        if (sortKey === 'name') {
-          return a.name.localeCompare(b.name);
-        }
         let valA = (sortKey === 'achievedVal' || sortKey === 'prodVal') ? a[sortKey] : (a.stats[sortKey] || 0);
         let valB = (sortKey === 'achievedVal' || sortKey === 'prodVal') ? b[sortKey] : (b.stats[sortKey] || 0);
         return valB - valA;
@@ -672,11 +638,11 @@
           };
         });
 
-        // Split: Agents (who have Done Consultation > 0) & Pharmacists (who work on FDB/IMM)
+        // Split: Agents (Done > 0) & Pharmacists (Done === 0)
         let agentsGroup = membersList.filter(m => m.stats.done > 0);
         let pharmGroup = membersList.filter(m => m.stats.done === 0);
 
-        // Sort both groups simultaneously based on their respective active filters
+        // Sort both groups independently based on active keys
         agentsGroup = sortGroup(agentsGroup, currentAgentSort);
         pharmGroup = sortGroup(pharmGroup, currentPharmSort);
 
@@ -735,7 +701,7 @@
 
         // Render Agents Section
         if (agentsGroup.length > 0) {
-          tableRows += `<tr class="role-divider"><td colspan="11">👨‍💼 AGENTS (CONSULTATION) — Sorted by: ${currentAgentSort.toUpperCase()} (High-to-Low)</td></tr>`;
+          tableRows += `<tr class="role-divider"><td colspan="11">👨‍💼 AGENTS (CONSULTATION) — Sorted High-to-Low</td></tr>`;
           agentsGroup.forEach(item => {
             agentAchieved += item.achievedVal;
             tableRows += buildRow(item);
@@ -744,7 +710,7 @@
 
         // Render Pharmacists Section
         if (pharmGroup.length > 0) {
-          tableRows += `<tr class="role-divider"><td colspan="11">💊 PHARMACISTS (IMM FDB / CALLING) — Sorted by: ${currentPharmSort.toUpperCase()} (High-to-Low)</td></tr>`;
+          tableRows += `<tr class="role-divider"><td colspan="11">💊 PHARMACISTS (IMM FDB / CALLING) — Sorted High-to-Low</td></tr>`;
           pharmGroup.forEach(item => {
             pharmAchieved += item.achievedVal;
             tableRows += buildRow(item);
